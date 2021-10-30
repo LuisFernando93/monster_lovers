@@ -25,7 +25,7 @@ struct Player {
 };
 
 void update(Parede *paredes, int nParede, Chao *pisos, int nChao);
-void render(Player player);
+void render();
 
 Player player;
 
@@ -70,7 +70,7 @@ int main()  {
 	chao2.height = 20;
 	
 	parede1.x = 0;
-	parede1.y = 300;
+	parede1.y = 0;
 	parede1.width = 20;
 	parede1.height = 600;
 	
@@ -97,7 +97,7 @@ int main()  {
 				
 				cleardevice();
 				update(paredes, nParede, pisos, nChao);
-				render(player);
+				render();
 				setvisualpage(pg);
 				
 			}
@@ -150,8 +150,9 @@ int main()  {
 }
 
 void update(Parede *paredes, int nParede, Chao *pisos, int nChao) {
-	for (int i = 0; i <= nParede - 1; i++) {
-		if ((player.x + player.width)/2 <= (paredes[i].x + paredes[i].width)/2) { //verifica se o jogador esta a esquerda da parede e esta mais alto que a parede
+	
+	for (int i = 0; i <= nParede - 1; i++) { //verifica colisao com parede
+		if (player.x + player.width/2 <= paredes[i].x + paredes[i].width/2) { //verifica se o jogador esta a esquerda da parede
 			if ((player.x + player.width) > paredes[i].x) {//verifica se o jogador esta entrando na parede
 				player.x = paredes[i].x - player.width;
 			}
@@ -159,11 +160,19 @@ void update(Parede *paredes, int nParede, Chao *pisos, int nChao) {
 			if (player.x < (paredes[i].x + paredes[i].width)) {//verifica se o jogador esta entrando na parede
 				player.x = paredes[i].x + paredes[i].width;
 			}
+		}		
+	}
+	
+	for (int i = 0; i <= nChao - 1; i++) { //verifica colisao com o chao
+		if (!(player.x + player.width <= pisos[i].x) && !(player.x >= pisos[i].x + pisos[i].width)) {// verifica se nao esta a direita ou esqueda do chao
+			if (player.y + player.height > pisos[i].y && !(player.y + player.height > pisos[i].y + pisos[i].height/2 )) {
+				player.y = pisos[i].y - player.height;
+			}
 		}
 	}
 }
 
-void render(Player player) {
+void render() {
 	setcolor(COLOR(79, 0, 201));
 	setfillstyle(1, COLOR(79, 0, 201));
 	bar(20, 20, WIDTH - 20, HEIGHT - 20);
