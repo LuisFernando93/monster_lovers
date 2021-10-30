@@ -26,6 +26,7 @@ struct Player {
 
 void update(Parede *paredes, int nParede, Chao *pisos, int nChao);
 void render();
+void playerCollision(Parede *paredes, int nParede, Chao *pisos, int nChao);
 
 Player player;
 
@@ -151,25 +152,7 @@ int main()  {
 
 void update(Parede *paredes, int nParede, Chao *pisos, int nChao) {
 	
-	for (int i = 0; i <= nParede - 1; i++) { //verifica colisao com parede
-		if (player.x + player.width/2 <= paredes[i].x + paredes[i].width/2) { //verifica se o jogador esta a esquerda da parede
-			if ((player.x + player.width) > paredes[i].x) {//verifica se o jogador esta entrando na parede
-				player.x = paredes[i].x - player.width;
-			}
-		} else { //jogador a direita da parede
-			if (player.x < (paredes[i].x + paredes[i].width)) {//verifica se o jogador esta entrando na parede
-				player.x = paredes[i].x + paredes[i].width;
-			}
-		}		
-	}
-	
-	for (int i = 0; i <= nChao - 1; i++) { //verifica colisao com o chao
-		if (!(player.x + player.width <= pisos[i].x) && !(player.x >= pisos[i].x + pisos[i].width)) {// verifica se nao esta a direita ou esqueda do chao
-			if (player.y + player.height > pisos[i].y && !(player.y + player.height > pisos[i].y + pisos[i].height/2 )) {
-				player.y = pisos[i].y - player.height;
-			}
-		}
-	}
+	playerCollision(paredes, nParede, pisos, nChao);
 }
 
 void render() {
@@ -188,5 +171,31 @@ void render() {
 //		bar(pisos[i].x, pisos[i].y, pisos[i].x + pisos[i].width, pisos[i].y + pisos[i].height);
 //		bar(paredes[i].x, paredes[i].y, paredes[i].x + paredes[i].width, paredes[i].y + paredes[i].height);
 //	}
+}
+
+void playerCollision(Parede *paredes, int nParede, Chao *pisos, int nChao) {
+	
+	for (int i = 0; i <= nParede - 1; i++) { //verifica colisao com parede
+		if (!(player.y >= paredes[i].y + paredes[i].height) && !(player.y + player.height <= paredes[i].y)) { //verifica se jogador esta acima ou abaixo da parede
+			if (player.x + player.width/2 <= paredes[i].x + paredes[i].width/2) { //verifica se o jogador esta a esquerda da parede
+				
+				if ((player.x + player.width) > paredes[i].x) {//verifica se o jogador esta entrando na parede
+					player.x = paredes[i].x - player.width;
+				}
+			} else { //jogador a direita da parede
+				if (player.x < (paredes[i].x + paredes[i].width)) {//verifica se o jogador esta entrando na parede
+					player.x = paredes[i].x + paredes[i].width;
+				}
+			}	
+		}
+	}
+	
+	for (int i = 0; i <= nChao - 1; i++) { //verifica colisao com o chao
+		if (!(player.x + player.width <= pisos[i].x) && !(player.x >= pisos[i].x + pisos[i].width)) {// verifica se nao esta a direita ou esqueda do chao
+			if (player.y + player.height > pisos[i].y && !(player.y + player.height > pisos[i].y + pisos[i].height/2 )) {
+				player.y = pisos[i].y - player.height;
+			}
+		}
+	}
 }
 
