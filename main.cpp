@@ -48,6 +48,7 @@ int main()  {
 	player.y = 500;
 	player.width = SPRITE_RES;
 	player.height = SPRITE_RES;
+	player.speed = 5;
 	
 	while(Tecla != ESC) {
   		
@@ -74,19 +75,19 @@ int main()  {
 				if (kbhit()) {
 		  			Tecla = getch();
 		  			if(GetKeyState('A')&0x80) { //esquerda
-		  				
+		  				player.x -= player.speed;
 					} 
 					
 					if(GetKeyState('W')&0x80) { //cima
-		  				
+		  				player.y -= player.speed;
 					}
 					
 					if(GetKeyState('S')&0x80) { //baixo
-		  				
+		  				player.y += player.speed;
 					} 
 					
 		  			if(GetKeyState('D')&0x80) { //direita
-		  				
+		  				player.x += player.speed;
 					} 
 					
 		  			if(GetKeyState(VK_SPACE)&0x80) { //jump
