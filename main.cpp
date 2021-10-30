@@ -24,12 +24,19 @@ struct Player {
 	int speed;
 };
 
-void update();
+void update(Parede *paredes, int nParede, Chao *pisos, int nChao);
 void render(Player player);
 
+Player player;
+
 int main()  { 
-	
-	Player player;
+
+	Parede parede1, parede2;
+	Parede *paredes;
+	int nParede = 2;
+	Chao chao1, chao2;
+	Chao *pisos;
+	int nChao = 2;
 	
 	char Tecla;
 	int pg = 1;
@@ -39,8 +46,7 @@ int main()  {
   	
   	gt1 = GetTickCount();
   	gt2 = gt1 + 1200;
-  	fps = 30;
-
+  	fps = 60;
 	
 	initwindow(WIDTH, HEIGHT);
 	
@@ -49,6 +55,34 @@ int main()  {
 	player.width = SPRITE_RES;
 	player.height = SPRITE_RES;
 	player.speed = 5;
+	
+	paredes = (Parede *)malloc(sizeof(Parede) * nParede);
+	pisos = (Chao *)malloc(sizeof(Chao) * nChao);
+	
+	chao1.x = 0;
+	chao1.y = 580;
+	chao1.width = 800;
+	chao1.height = 20;
+	
+	chao2.x = 200;
+	chao2.y = 300;
+	chao2.width = 400;
+	chao2.height = 20;
+	
+	parede1.x = 0;
+	parede1.y = 300;
+	parede1.width = 20;
+	parede1.height = 600;
+	
+	parede2.x = 780;
+	parede2.y = 0;
+	parede2.width = 20;
+	parede2.height = 600;
+	
+	paredes[0] = parede1;
+	paredes[1] = parede2;
+	pisos[0] = chao1;
+	pisos[1] = chao2;
 	
 	while(Tecla != ESC) {
   		
@@ -62,7 +96,7 @@ int main()  {
 		  		setactivepage(pg);
 				
 				cleardevice();
-				//update
+				update(paredes, nParede, pisos, nChao);
 				render(player);
 				setvisualpage(pg);
 				
@@ -110,6 +144,23 @@ int main()  {
 		}
 
 	}
+	
+	free(paredes);
+	free(pisos);
+}
+
+void update(Parede *paredes, int nParede, Chao *pisos, int nChao) {
+	for (int i = 0; i <= nParede - 1; i++) {
+		if ((player.x + player.width)/2 <= (paredes[i].x + paredes[i].width)/2) { //verifica se o jogador esta a esquerda da parede e esta mais alto que a parede
+			if ((player.x + player.width) > paredes[i].x) {//verifica se o jogador esta entrando na parede
+				player.x = paredes[i].x - player.width;
+			}
+		} else { //jogador a direita da parede
+			if (player.x < (paredes[i].x + paredes[i].width)) {//verifica se o jogador esta entrando na parede
+				player.x = paredes[i].x + paredes[i].width;
+			}
+		}
+	}
 }
 
 void render(Player player) {
@@ -122,5 +173,11 @@ void render(Player player) {
 	
 	setfillstyle(1, COLOR(0, 255, 0));
 	bar(player.x, player.y, player.x + player.width, player.y + player.height);
+	
+//	setfillstyle(1, COLOR(255, 0, 0));
+//	for (int i = 0; i <= 1; i++) {
+//		bar(pisos[i].x, pisos[i].y, pisos[i].x + pisos[i].width, pisos[i].y + pisos[i].height);
+//		bar(paredes[i].x, paredes[i].y, paredes[i].x + paredes[i].width, paredes[i].y + paredes[i].height);
+//	}
 }
 
