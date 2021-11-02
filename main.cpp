@@ -23,11 +23,15 @@ struct Player {
 	int x, y;
 	int width, height;
 	int speed;
+	bool jump;
+	int jumpHeight;
+	double vspd;
 };
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor);
 void render();
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
+void playerJump(Floor *floors, int Floor);
 void freeFall(Floor *floors, int nFloor);
 
 Player player;
@@ -58,6 +62,9 @@ int main()  {
 	player.width = SPRITE_RES;
 	player.height = SPRITE_RES;
 	player.speed = 5;
+	player.jump = false;
+	player.jumpHeight = 30;
+	player.vspd = 0;
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -91,6 +98,7 @@ int main()  {
 	walls[1] = wall2;
 	floors[0] = floor1;
 	floors[1] = floor2;
+	floors[2] = floor3;
 	
 	while(Tecla != ESC) {
   		
@@ -121,11 +129,11 @@ int main()  {
 					} 
 					
 					if(GetKeyState('W')&0x80) { //cima
-		  				player.y -= player.speed;
+		  				player.jump = true;
 					}
 					
 					if(GetKeyState('S')&0x80) { //baixo
-		  				player.y += player.speed;
+		  				
 					} 
 					
 		  			if(GetKeyState('D')&0x80) { //direita
@@ -133,7 +141,7 @@ int main()  {
 					} 
 					
 		  			if(GetKeyState(VK_SPACE)&0x80) { //jump
-		  				
+		  				player.jump = true;
 					}
 					
 					if(GetKeyState('R')&0x80) { //ataque
@@ -160,6 +168,7 @@ int main()  {
 void update(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
 	playerCollision(walls, nWall, floors, nFloor);
+	playerJump(floors, nFloor);
 	freeFall(floors, nFloor);
 }
 
@@ -174,12 +183,7 @@ void render() {
 	
 	setfillstyle(1, COLOR(0, 255, 0));
 	bar(player.x, player.y, player.x + player.width, player.y + player.height);
-	
-//	setfillstyle(1, COLOR(255, 0, 0));
-//	for (int i = 0; i <= 1; i++) {
-//		bar(pisos[i].x, pisos[i].y, pisos[i].x + pisos[i].width, pisos[i].y + pisos[i].height);
-//		bar(paredes[i].x, paredes[i].y, paredes[i].x + paredes[i].width, paredes[i].y + paredes[i].height);
-//	}
+
 }
 
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
@@ -208,19 +212,34 @@ void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	}
 }
 
-void freeFall(Floor *floors, int nFloor) {
+void playerJump(Floor *floors, int nFloor) { //pulo do jogador
 	
-	bool fall = true;
-	for (int i = 0; i <= nFloor - 1; i++) {
-		if (!(player.x + player.width <= floors[i].x) && !(player.x >= floors[i].x + floors[i].width)) {// verifica se nao esta a direita ou esqueda do chao
-			if (player.y + player.height > floors[i].y && !(player.y + player.height > floors[i].y + floors[i].height/2 )) {
-				fall = false;
+	if (player.jump) {
+			for (int i = 0; i <= nFloor; i++) {
+			if (!(player.x + player.width <= floors[i].x) && !(player.x >= floors[i].x + floors[i].width)) {
+				if ((player.y+player.height >= floors[i].y) && (player.y+player.height <= floors[i].y + floors[i].height)) {
+					player.vspd = -(player.jumpHeight);
+				}
 			}
 		}
 	}
+	player.jump = false;
+}
+
+void freeFall(Floor *floors, int nFloor) { //queda livre
 	
-	if (fall) {
-		player.y += GRAVITY;
+	player.vspd += GRAVITY;
+	if (player.vspd > 0) {
+		for (int i = 0; i <= nFloor - 1; i++) { //verifica colisao com o chao
+			if (!(player.x + player.width <= floors[i].x) && !(player.x >= floors[i].x + floors[i].width)) {
+				if (player.y+player.height+player.vspd >= floors[i].y && player.y + player.height <= floors[i].y) {
+					player.y = floors[i].y - player.height;
+					player.vspd = 0;
+					return;
+				}
+			}
+		}
 	}
+	player.y += (int)player.vspd;
 }
 
