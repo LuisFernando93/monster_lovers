@@ -8,12 +8,12 @@ using namespace std;
 #define ESC 27
 #define SPRITE_RES 64
 
-struct Chao {
+struct Floor {
 	int x, y;
 	int width, height;
 };
 
-struct Parede {
+struct Wall {
 	int x, y;
 	int width, height;
 };
@@ -24,20 +24,21 @@ struct Player {
 	int speed;
 };
 
-void update(Parede *paredes, int nParede, Chao *pisos, int nChao);
+void update(Wall *walls, int nWall, Floor *floors, int nFloor);
 void render();
-void playerCollision(Parede *paredes, int nParede, Chao *pisos, int nChao);
+void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
+void freeFall(Floor *floors, int nFloor);
 
 Player player;
 
 int main()  { 
 
-	Parede parede1, parede2;
-	Parede *paredes;
-	int nParede = 2;
-	Chao chao1, chao2;
-	Chao *pisos;
-	int nChao = 2;
+	Wall wall1, wall2;
+	Wall *walls;
+	int nWall = 2;
+	Floor floor1, floor2, floor3;
+	Floor *floors;
+	int nFloor = 3;
 	
 	char Tecla;
 	int pg = 1;
@@ -57,33 +58,38 @@ int main()  {
 	player.height = SPRITE_RES;
 	player.speed = 5;
 	
-	paredes = (Parede *)malloc(sizeof(Parede) * nParede);
-	pisos = (Chao *)malloc(sizeof(Chao) * nChao);
+	walls = (Wall *)malloc(sizeof(Wall) * nWall);
+	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
 	
-	chao1.x = 0;
-	chao1.y = 580;
-	chao1.width = 800;
-	chao1.height = 20;
+	floor1.x = 0;
+	floor1.y = 580;
+	floor1.width = 800;
+	floor1.height = 20;
 	
-	chao2.x = 200;
-	chao2.y = 300;
-	chao2.width = 400;
-	chao2.height = 20;
+	floor2.x = 0;
+	floor2.y = 380;
+	floor2.width = 300;
+	floor2.height = 20;
 	
-	parede1.x = 0;
-	parede1.y = 0;
-	parede1.width = 20;
-	parede1.height = 600;
+	floor3.x = 500;
+	floor3.y = 380;
+	floor3.width = 300;
+	floor3.height = 20;
 	
-	parede2.x = 780;
-	parede2.y = 0;
-	parede2.width = 20;
-	parede2.height = 600;
+	wall1.x = 0;
+	wall1.y = 0;
+	wall1.width = 20;
+	wall1.height = 600;
 	
-	paredes[0] = parede1;
-	paredes[1] = parede2;
-	pisos[0] = chao1;
-	pisos[1] = chao2;
+	wall2.x = 780;
+	wall2.y = 0;
+	wall2.width = 20;
+	wall2.height = 600;
+	
+	walls[0] = wall1;
+	walls[1] = wall2;
+	floors[0] = floor1;
+	floors[1] = floor2;
 	
 	while(Tecla != ESC) {
   		
@@ -97,7 +103,7 @@ int main()  {
 		  		setactivepage(pg);
 				
 				cleardevice();
-				update(paredes, nParede, pisos, nChao);
+				update(walls, nWall, floors, nFloor);
 				render();
 				setvisualpage(pg);
 				
@@ -146,13 +152,13 @@ int main()  {
 
 	}
 	
-	free(paredes);
-	free(pisos);
+	free(walls);
+	free(floors);
 }
 
-void update(Parede *paredes, int nParede, Chao *pisos, int nChao) {
+void update(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
-	playerCollision(paredes, nParede, pisos, nChao);
+	playerCollision(walls, nWall, floors, nFloor);
 }
 
 void render() {
@@ -161,7 +167,8 @@ void render() {
 	bar(20, 20, WIDTH - 20, HEIGHT - 20);
 	
 	setfillstyle(1, 0);
-	bar(200, 300, 600, 320);
+	bar(0, 380, 300, 400);
+	bar(500, 380, 800, 400);
 	
 	setfillstyle(1, COLOR(0, 255, 0));
 	bar(player.x, player.y, player.x + player.width, player.y + player.height);
@@ -173,29 +180,33 @@ void render() {
 //	}
 }
 
-void playerCollision(Parede *paredes, int nParede, Chao *pisos, int nChao) {
+void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
-	for (int i = 0; i <= nParede - 1; i++) { //verifica colisao com parede
-		if (!(player.y >= paredes[i].y + paredes[i].height) && !(player.y + player.height <= paredes[i].y)) { //verifica se jogador esta acima ou abaixo da parede
-			if (player.x + player.width/2 <= paredes[i].x + paredes[i].width/2) { //verifica se o jogador esta a esquerda da parede
+	for (int i = 0; i <= nWall - 1; i++) { //verifica colisao com parede
+		if (!(player.y >= walls[i].y + walls[i].height) && !(player.y + player.height <= walls[i].y)) { //verifica se jogador esta acima ou abaixo da parede
+			if (player.x + player.width/2 <= walls[i].x + walls[i].width/2) { //verifica se o jogador esta a esquerda da parede
 				
-				if ((player.x + player.width) > paredes[i].x) {//verifica se o jogador esta entrando na parede
-					player.x = paredes[i].x - player.width;
+				if ((player.x + player.width) > walls[i].x) {//verifica se o jogador esta entrando na parede
+					player.x = walls[i].x - player.width;
 				}
 			} else { //jogador a direita da parede
-				if (player.x < (paredes[i].x + paredes[i].width)) {//verifica se o jogador esta entrando na parede
-					player.x = paredes[i].x + paredes[i].width;
+				if (player.x < (walls[i].x + walls[i].width)) {//verifica se o jogador esta entrando na parede
+					player.x = walls[i].x + walls[i].width;
 				}
 			}	
 		}
 	}
 	
-	for (int i = 0; i <= nChao - 1; i++) { //verifica colisao com o chao
-		if (!(player.x + player.width <= pisos[i].x) && !(player.x >= pisos[i].x + pisos[i].width)) {// verifica se nao esta a direita ou esqueda do chao
-			if (player.y + player.height > pisos[i].y && !(player.y + player.height > pisos[i].y + pisos[i].height/2 )) {
-				player.y = pisos[i].y - player.height;
+	for (int i = 0; i <= nFloor - 1; i++) { //verifica colisao com o chao
+		if (!(player.x + player.width <= floors[i].x) && !(player.x >= floors[i].x + floors[i].width)) {// verifica se nao esta a direita ou esqueda do chao
+			if (player.y + player.height > floors[i].y && !(player.y + player.height > floors[i].y + floors[i].height/2 )) {
+				player.y = floors[i].y - player.height;
 			}
 		}
 	}
+}
+
+void freeFall(Floor *floors, int nFloor) {
+	
 }
 
