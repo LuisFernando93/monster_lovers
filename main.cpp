@@ -7,6 +7,7 @@ using namespace std;
 #define HEIGHT 600
 #define ESC 27
 #define SPRITE_RES 64
+#define GRAVITY 2
 
 struct Floor {
 	int x, y;
@@ -53,7 +54,7 @@ int main()  {
 	initwindow(WIDTH, HEIGHT);
 	
 	player.x = 50;
-	player.y = 500;
+	player.y = 50;
 	player.width = SPRITE_RES;
 	player.height = SPRITE_RES;
 	player.speed = 5;
@@ -159,6 +160,7 @@ int main()  {
 void update(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
 	playerCollision(walls, nWall, floors, nFloor);
+	freeFall(floors, nFloor);
 }
 
 void render() {
@@ -208,5 +210,17 @@ void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
 
 void freeFall(Floor *floors, int nFloor) {
 	
+	bool fall = true;
+	for (int i = 0; i <= nFloor - 1; i++) {
+		if (!(player.x + player.width <= floors[i].x) && !(player.x >= floors[i].x + floors[i].width)) {// verifica se nao esta a direita ou esqueda do chao
+			if (player.y + player.height > floors[i].y && !(player.y + player.height > floors[i].y + floors[i].height/2 )) {
+				fall = false;
+			}
+		}
+	}
+	
+	if (fall) {
+		player.y += GRAVITY;
+	}
 }
 
