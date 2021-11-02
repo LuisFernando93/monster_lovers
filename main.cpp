@@ -28,6 +28,11 @@ struct Player {
 	double vspd;
 };
 
+struct Enemy {
+	int x, y;
+	int width, height;
+};
+
 void update(Wall *walls, int nWall, Floor *floors, int nFloor);
 void render();
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
@@ -35,6 +40,7 @@ void playerJump(Floor *floors, int Floor);
 void freeFall(Floor *floors, int nFloor);
 
 Player player;
+Enemy enemy;
 
 int main()  { 
 
@@ -58,13 +64,18 @@ int main()  {
 	initwindow(WIDTH, HEIGHT);
 	
 	player.x = 50;
-	player.y = 50;
+	player.y = 380 - 64;
 	player.width = SPRITE_RES;
 	player.height = SPRITE_RES;
 	player.speed = 5;
 	player.jump = false;
 	player.jumpHeight = 30;
 	player.vspd = 0;
+	
+	enemy.x = WIDTH - 50 - 64;
+	enemy.y = 380 - 64;
+	enemy.width = SPRITE_RES;
+	enemy.height = SPRITE_RES;
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -180,6 +191,9 @@ void render() {
 	setfillstyle(1, 0);
 	bar(0, 380, 300, 400);
 	bar(500, 380, 800, 400);
+	
+	setfillstyle(1, COLOR(255, 0, 0));
+	bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
 	
 	setfillstyle(1, COLOR(0, 255, 0));
 	bar(player.x, player.y, player.x + player.width, player.y + player.height);
