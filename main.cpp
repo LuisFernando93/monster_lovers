@@ -31,20 +31,22 @@ struct Player {
 struct Enemy {
 	int x, y;
 	int width, height;
+	int timer;
 };
 
 struct Position {
 	int x,y;
 };
 
-void update(Wall *walls, int nWall, Floor *floors, int nFloor);
+void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions);
 void render(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerJump(Floor *floors, int Floor);
+void playerAttack();
 void freeFall(Floor *floors, int nFloor);
 void enemyMove(Position *positions);
 void enemyAttack();
-void enemyAI();
+void enemyAI(Position *positions);
 
 Player player;
 Enemy enemy;
@@ -85,6 +87,7 @@ int main()  {
 	enemy.height = SPRITE_RES;
 	enemy.x = WIDTH - 50 - enemy.width;
 	enemy.y = 420 - enemy.height;
+	enemy.timer = 0;
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -149,7 +152,7 @@ int main()  {
 		  		setactivepage(pg);
 				
 				cleardevice();
-				update(walls, nWall, floors, nFloor);
+				update(walls, nWall, floors, nFloor, positions);
 				render(walls, nWall, floors, nFloor);
 				setvisualpage(pg);
 				
@@ -202,11 +205,12 @@ int main()  {
 	free(positions);
 }
 
-void update(Wall *walls, int nWall, Floor *floors, int nFloor) {
+void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions) {
 	
 	playerCollision(walls, nWall, floors, nFloor);
 	playerJump(floors, nFloor);
 	freeFall(floors, nFloor);
+	enemyAI(positions);
 	
 }
 
@@ -271,6 +275,10 @@ void playerJump(Floor *floors, int nFloor) { //pulo do jogador
 	player.jump = false;
 }
 
+void playerAttack() {
+	
+}
+
 void freeFall(Floor *floors, int nFloor) { //queda livre
 	
 	player.vspd += GRAVITY;
@@ -288,33 +296,40 @@ void freeFall(Floor *floors, int nFloor) { //queda livre
 	player.y += (int)player.vspd;
 }
 
-void enemyMove(Position *positions) {
+void enemyMove(Position *positions) {//movimento do inimigo
 	
 	int enemyPos, nextPos;
 	
 	//verifica a posicao atual do inimigo
 	if (enemy.x == positions[0].x && enemy.y == positions[0].y) {
 		enemyPos = 0;
-		//printf("0");
 	} else if (enemy.x == positions[1].x && enemy.y == positions[1].y) {
 		enemyPos = 1;
-		//printf("1");
 	} else if (enemy.x == positions[2].x && enemy.y == positions[2].y) {
 		enemyPos = 2;
-		//printf("2");
 	} else if (enemy.x == positions[3].x && enemy.y == positions[3].y) {
 		enemyPos = 3;
-		//printf("3");
 	}
 	
 	nextPos = enemyPos;
 	while (nextPos == enemyPos) { //escolhe uma nova posicao aleatoria, diferente da atual
 		nextPos = rand()%4;
 	}
-	printf("%d", nextPos);
+
 	
 	//reposiciona o inimigo
 	enemy.x = positions[nextPos].x;
 	enemy.y = positions[nextPos].y;
 }
 
+void enemyAttack() {
+	
+}
+
+void enemyAI(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. ao executar, retorna o novo valor do timer
+	enemy.timer++;
+	if (enemy.timer >= 60) {
+		enemyMove(positions);
+		enemy.timer = 0;
+	}
+}
