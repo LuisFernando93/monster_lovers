@@ -3,8 +3,8 @@
 #include<graphics.h>
 using namespace std;
 
-#define WIDTH 800
-#define HEIGHT 600
+#define WIDTH 640
+#define HEIGHT 640
 #define ESC 27
 #define SPRITE_RES 64
 #define GRAVITY 2
@@ -33,11 +33,16 @@ struct Enemy {
 	int width, height;
 };
 
+struct Position {
+	int x,y;
+};
+
 void update(Wall *walls, int nWall, Floor *floors, int nFloor);
-void render();
+void render(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerJump(Floor *floors, int Floor);
 void freeFall(Floor *floors, int nFloor);
+void moveEnemy(Position *positions);
 
 Player player;
 Enemy enemy;
@@ -50,6 +55,8 @@ int main()  {
 	Floor floor1, floor2, floor3;
 	Floor *floors;
 	int nFloor = 3;
+	Position pos0, pos1, pos2, pos3;
+	Position *positions;
 	
 	char Tecla;
 	int pg = 1;
@@ -63,53 +70,70 @@ int main()  {
 	
 	initwindow(WIDTH, HEIGHT);
 	
-	player.x = 50;
-	player.y = 380 - 64;
 	player.width = SPRITE_RES;
 	player.height = SPRITE_RES;
+	player.x = 50;
+	player.y = 420 - player.height;
 	player.speed = 5;
 	player.jump = false;
 	player.jumpHeight = 30;
 	player.vspd = 0;
 	
-	enemy.x = WIDTH - 50 - 64;
-	enemy.y = 380 - 64;
 	enemy.width = SPRITE_RES;
 	enemy.height = SPRITE_RES;
+	enemy.x = WIDTH - 50 - enemy.width;
+	enemy.y = 420 - enemy.height;
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
+	positions = (Position *)malloc(sizeof(Position) * 4);
 	
 	floor1.x = 0;
-	floor1.y = 580;
-	floor1.width = 800;
+	floor1.y = 620;
+	floor1.width = 640;
 	floor1.height = 20;
 	
 	floor2.x = 0;
-	floor2.y = 380;
-	floor2.width = 300;
+	floor2.y = 420;
+	floor2.width = 250;
 	floor2.height = 20;
 	
-	floor3.x = 500;
-	floor3.y = 380;
-	floor3.width = 300;
+	floor3.x = 390;
+	floor3.y = 420;
+	floor3.width = 250;
 	floor3.height = 20;
 	
 	wall1.x = 0;
 	wall1.y = 0;
 	wall1.width = 20;
-	wall1.height = 600;
+	wall1.height = 640;
 	
-	wall2.x = 780;
+	wall2.x = 620;
 	wall2.y = 0;
 	wall2.width = 20;
-	wall2.height = 600;
+	wall2.height = 640;
+	
+	pos0.x = 30;
+	pos0.y = floor1.y - enemy.height;
+	
+	pos1.x = 50;
+	pos1.y = floor2.y - enemy.height;
+	
+	pos2.x = WIDTH - 50 - enemy.width;
+	pos2.y = floor3.y - enemy.height;
+	
+	pos3.x = WIDTH - 30 - enemy.width;
+	pos3.y = floor1.y - enemy.height;
 	
 	walls[0] = wall1;
 	walls[1] = wall2;
 	floors[0] = floor1;
 	floors[1] = floor2;
 	floors[2] = floor3;
+	positions[0] = pos0;
+	positions[1] = pos1;
+	positions[2] = pos2;
+	positions[3] = pos3;
 	
 	while(Tecla != ESC) {
   		
@@ -124,7 +148,8 @@ int main()  {
 				
 				cleardevice();
 				update(walls, nWall, floors, nFloor);
-				render();
+				moveEnemy(positions);
+				render(walls, nWall, floors, nFloor);
 				setvisualpage(pg);
 				
 			}
@@ -174,6 +199,7 @@ int main()  {
 	
 	free(walls);
 	free(floors);
+	free(positions);
 }
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor) {
@@ -181,16 +207,21 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	playerCollision(walls, nWall, floors, nFloor);
 	playerJump(floors, nFloor);
 	freeFall(floors, nFloor);
+	
 }
 
-void render() {
+void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	setcolor(COLOR(79, 0, 201));
 	setfillstyle(1, COLOR(79, 0, 201));
 	bar(20, 20, WIDTH - 20, HEIGHT - 20);
-	
+		
 	setfillstyle(1, 0);
-	bar(0, 380, 300, 400);
-	bar(500, 380, 800, 400);
+	for (int i = 0; i <= nWall; i++) {
+		bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
+	}
+	for (int i = 0; i <= nFloor; i++) {
+		bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
+	}
 	
 	setfillstyle(1, COLOR(255, 0, 0));
 	bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
@@ -255,5 +286,26 @@ void freeFall(Floor *floors, int nFloor) { //queda livre
 		}
 	}
 	player.y += (int)player.vspd;
+}
+
+void moveEnemy(Position *positions) {
+	
+	int enemyPos, nextPos;
+	
+	//verifica a posicao atual do inimigo
+	if (enemy.x == positions[0].x && enemy.y == positions[0].y) {
+		enemyPos = 1;
+		printf("0");
+	} else if (enemy.x == positions[1].x && enemy.y == positions[1].y) {
+		enemyPos = 2;
+		printf("1");
+	} else if (enemy.x == positions[2].x && enemy.y == positions[2].y) {
+		enemyPos = 3;
+		printf("2");
+	} else if (enemy.x == positions[3].x && enemy.y == positions[3].y) {
+		enemyPos = 4;
+		printf("3");
+	}
+	
 }
 
