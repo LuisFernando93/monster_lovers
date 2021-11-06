@@ -42,7 +42,9 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerJump(Floor *floors, int Floor);
 void freeFall(Floor *floors, int nFloor);
-void moveEnemy(Position *positions);
+void enemyMove(Position *positions);
+void enemyAttack();
+void enemyAI();
 
 Player player;
 Enemy enemy;
@@ -148,7 +150,6 @@ int main()  {
 				
 				cleardevice();
 				update(walls, nWall, floors, nFloor);
-				moveEnemy(positions);
 				render(walls, nWall, floors, nFloor);
 				setvisualpage(pg);
 				
@@ -196,7 +197,6 @@ int main()  {
 		}
 
 	}
-	
 	free(walls);
 	free(floors);
 	free(positions);
@@ -288,24 +288,33 @@ void freeFall(Floor *floors, int nFloor) { //queda livre
 	player.y += (int)player.vspd;
 }
 
-void moveEnemy(Position *positions) {
+void enemyMove(Position *positions) {
 	
 	int enemyPos, nextPos;
 	
 	//verifica a posicao atual do inimigo
 	if (enemy.x == positions[0].x && enemy.y == positions[0].y) {
-		enemyPos = 1;
-		printf("0");
+		enemyPos = 0;
+		//printf("0");
 	} else if (enemy.x == positions[1].x && enemy.y == positions[1].y) {
-		enemyPos = 2;
-		printf("1");
+		enemyPos = 1;
+		//printf("1");
 	} else if (enemy.x == positions[2].x && enemy.y == positions[2].y) {
-		enemyPos = 3;
-		printf("2");
+		enemyPos = 2;
+		//printf("2");
 	} else if (enemy.x == positions[3].x && enemy.y == positions[3].y) {
-		enemyPos = 4;
-		printf("3");
+		enemyPos = 3;
+		//printf("3");
 	}
 	
+	nextPos = enemyPos;
+	while (nextPos == enemyPos) { //escolhe uma nova posicao aleatoria, diferente da atual
+		nextPos = rand()%4;
+	}
+	printf("%d", nextPos);
+	
+	//reposiciona o inimigo
+	enemy.x = positions[nextPos].x;
+	enemy.y = positions[nextPos].y;
 }
 
