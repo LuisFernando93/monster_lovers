@@ -4,7 +4,8 @@
 using namespace std;
 
 #define WIDTH 640
-#define HEIGHT 640
+#define HEIGHT 248
+#define SCALE 1
 #define ESC 27
 #define SPRITE_RES 64
 #define GRAVITY 2
@@ -51,6 +52,8 @@ void enemyAI(Position *positions);
 Player player;
 Enemy enemy;
 
+void *imgCenario;
+
 int main()  { 
 
 	Wall wall1, wall2;
@@ -68,73 +71,85 @@ int main()  {
 	long long unsigned gt1, gt2;
   	int fps;
   	
+  	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
+  	
   	gt1 = GetTickCount();
   	gt2 = gt1 + 1200;
   	fps = 60;
-	
-	initwindow(WIDTH, HEIGHT);
-	
-	player.width = SPRITE_RES;
-	player.height = SPRITE_RES;
-	player.x = 50;
-	player.y = 420 - player.height;
-	player.speed = 5;
-	player.jump = false;
-	player.jumpHeight = 30;
-	player.vspd = 0;
-	
-	enemy.width = SPRITE_RES;
-	enemy.height = SPRITE_RES;
-	enemy.x = WIDTH - 50 - enemy.width;
-	enemy.y = 420 - enemy.height;
-	enemy.timer = 0;
+  	
+  	int LImgCenario, AImgCenario, TamImgCenario;
+  	
+  	LImgCenario = 640;
+  	AImgCenario = 248;
+  	
+  	readimagefile("cenario.bmp", 0, 0, 640 - 1, 248 - 1);
+  	TamImgCenario = imagesize(0, 0, 640-1, 248-1);
+  	imgCenario = malloc(TamImgCenario);
+	getimage(0, 0, LImgCenario-1, AImgCenario-1, imgCenario);
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
 	positions = (Position *)malloc(sizeof(Position) * 4);
 	
 	floor1.x = 0;
-	floor1.y = 620;
-	floor1.width = 640;
+	floor1.y = HEIGHT*SCALE -20;
+	floor1.width = WIDTH*SCALE;
 	floor1.height = 20;
 	
 	floor2.x = 0;
-	floor2.y = 420;
-	floor2.width = 250;
+	floor2.y = (HEIGHT - 20 - 60)*SCALE;
+	floor2.width = (WIDTH - 180)*SCALE/2;
 	floor2.height = 20;
 	
-	floor3.x = 390;
-	floor3.y = 420;
-	floor3.width = 250;
+	floor3.x = (WIDTH/2 + 70)*SCALE;
+	floor3.y = (HEIGHT - 20 - 60)*SCALE;
+	floor3.width = (WIDTH - 180)*SCALE/2;
 	floor3.height = 20;
 	
 	wall1.x = 0;
 	wall1.y = 0;
 	wall1.width = 20;
-	wall1.height = 640;
+	wall1.height = HEIGHT*SCALE;
 	
-	wall2.x = 620;
+	wall2.x = WIDTH*SCALE - 20;
 	wall2.y = 0;
 	wall2.width = 20;
-	wall2.height = 640;
-	
-	pos0.x = 30;
-	pos0.y = floor1.y - enemy.height;
-	
-	pos1.x = 50;
-	pos1.y = floor2.y - enemy.height;
-	
-	pos2.x = WIDTH - 50 - enemy.width;
-	pos2.y = floor3.y - enemy.height;
-	
-	pos3.x = WIDTH - 30 - enemy.width;
-	pos3.y = floor1.y - enemy.height;
+	wall2.height = HEIGHT*SCALE;
 	
 	walls[0] = wall1;
 	walls[1] = wall2;
 	floors[0] = floor1;
 	floors[1] = floor2;
 	floors[2] = floor3;
+	
+	player.width = SPRITE_RES*SCALE;
+	player.height = SPRITE_RES*SCALE;
+	player.x = 50*SCALE;
+	player.y = floor2.y - player.height;
+	player.speed = 5;
+	player.jump = false;
+	player.jumpHeight = 30;
+	player.vspd = 0;
+	
+	enemy.width = SPRITE_RES*SCALE;
+	enemy.height = SPRITE_RES*SCALE;
+	enemy.x = (WIDTH - 50)*SCALE - enemy.width;
+	enemy.y = floor3.y - enemy.height;
+	enemy.timer = 0;
+	
+		
+	pos0.x = 30*SCALE;
+	pos0.y = floor1.y - enemy.height;
+	
+	pos1.x = 50*SCALE;
+	pos1.y = floor2.y - enemy.height;
+	
+	pos2.x = (WIDTH - 50)*SCALE - enemy.width;
+	pos2.y = floor3.y - enemy.height;
+	
+	pos3.x = (WIDTH - 30)*SCALE - enemy.width;
+	pos3.y = floor1.y - enemy.height;
+	
 	positions[0] = pos0;
 	positions[1] = pos1;
 	positions[2] = pos2;
@@ -203,6 +218,7 @@ int main()  {
 	free(walls);
 	free(floors);
 	free(positions);
+	free(imgCenario);
 }
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions) {
@@ -215,11 +231,14 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 }
 
 void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
+	
 	setcolor(COLOR(79, 0, 201));
 	setfillstyle(1, COLOR(79, 0, 201));
-	bar(20, 20, WIDTH - 20, HEIGHT - 20);
+	bar(20, 20, WIDTH*SCALE - 20, HEIGHT*SCALE - 20);
+	
+	putimage(0, 0, imgCenario, COPY_PUT);
 		
-	setfillstyle(1, 0);
+	setfillstyle(1, COLOR(255, 255, 0));
 	for (int i = 0; i <= nWall; i++) {
 		bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
 	}
