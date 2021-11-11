@@ -5,7 +5,7 @@ using namespace std;
 
 #define WIDTH 640
 #define HEIGHT 248
-#define SCALE 1
+#define SCALE 2 
 #define ESC 27
 #define SPRITE_RES 64
 #define GRAVITY 2
@@ -79,11 +79,11 @@ int main()  {
   	
   	int WImgScene, HImgScene, sizeImgScene;
   	
-  	WImgScene = 640;
-  	HImgScene = 248;
+  	WImgScene = 1280;
+  	HImgScene = 496;
   	
-  	readimagefile("cenario.bmp", 0, 0, 640 - 1, 248 - 1);
-  	sizeImgScene = imagesize(0, 0, 640-1, 248-1);
+  	readimagefile("cenario.bmp", 0, 0, WImgScene - 1, HImgScene - 1);
+  	sizeImgScene = imagesize(0, 0, WImgScene - 1, HImgScene - 1);
   	imgScene = malloc(sizeImgScene);
 	getimage(0, 0, WImgScene-1, HImgScene-1, imgScene);
 	
@@ -92,23 +92,23 @@ int main()  {
 	positions = (Position *)malloc(sizeof(Position) * 4);
 	
 	floor1.x = 0;
-	floor1.y = HEIGHT*SCALE -20;
+	floor1.y = HEIGHT*SCALE - 10;
 	floor1.width = WIDTH*SCALE;
 	floor1.height = 20;
 	
 	floor2.x = 0;
-	floor2.y = (HEIGHT - 20 - 60)*SCALE;
+	floor2.y = (HEIGHT - 15 - 60)*SCALE;
 	floor2.width = (WIDTH - 180)*SCALE/2;
 	floor2.height = 20;
 	
 	floor3.x = (WIDTH/2 + 70)*SCALE;
-	floor3.y = (HEIGHT - 20 - 60)*SCALE;
+	floor3.y = (HEIGHT - 15 - 60)*SCALE;
 	floor3.width = (WIDTH - 180)*SCALE/2;
 	floor3.height = 20;
 	
 	wall1.x = 0;
 	wall1.y = 0;
-	wall1.width = 20;
+	wall1.width = 35*SCALE;
 	wall1.height = HEIGHT*SCALE;
 	
 	wall2.x = WIDTH*SCALE - 20;
@@ -238,13 +238,13 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
 	putimage(0, 0, imgScene, COPY_PUT);
 		
-	setfillstyle(1, COLOR(255, 255, 0));
-	for (int i = 0; i <= nWall; i++) {
-		bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
-	}
-	for (int i = 0; i <= nFloor; i++) {
-		bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
-	}
+//	setfillstyle(1, COLOR(255, 255, 0));
+//	for (int i = 0; i <= nWall; i++) {
+//		bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
+//	}
+//	for (int i = 0; i <= nFloor; i++) {
+//		bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
+//	}
 	
 	setfillstyle(1, COLOR(255, 0, 0));
 	bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
