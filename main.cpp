@@ -52,7 +52,7 @@ void enemyAI(Position *positions);
 Player player;
 Enemy enemy;
 
-void *imgCenario;
+void *imgScene;
 
 int main()  { 
 
@@ -77,15 +77,15 @@ int main()  {
   	gt2 = gt1 + 1200;
   	fps = 60;
   	
-  	int LImgCenario, AImgCenario, TamImgCenario;
+  	int WImgScene, HImgScene, sizeImgScene;
   	
-  	LImgCenario = 640;
-  	AImgCenario = 248;
+  	WImgScene = 640;
+  	HImgScene = 248;
   	
   	readimagefile("cenario.bmp", 0, 0, 640 - 1, 248 - 1);
-  	TamImgCenario = imagesize(0, 0, 640-1, 248-1);
-  	imgCenario = malloc(TamImgCenario);
-	getimage(0, 0, LImgCenario-1, AImgCenario-1, imgCenario);
+  	sizeImgScene = imagesize(0, 0, 640-1, 248-1);
+  	imgScene = malloc(sizeImgScene);
+	getimage(0, 0, WImgScene-1, HImgScene-1, imgScene);
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -124,7 +124,7 @@ int main()  {
 	
 	player.width = SPRITE_RES*SCALE;
 	player.height = SPRITE_RES*SCALE;
-	player.x = 50*SCALE;
+	player.x = (WIDTH/2 - 180 )*SCALE;
 	player.y = floor2.y - player.height;
 	player.speed = 5;
 	player.jump = false;
@@ -218,7 +218,7 @@ int main()  {
 	free(walls);
 	free(floors);
 	free(positions);
-	free(imgCenario);
+	free(imgScene);
 }
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions) {
@@ -236,7 +236,7 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	setfillstyle(1, COLOR(79, 0, 201));
 	bar(20, 20, WIDTH*SCALE - 20, HEIGHT*SCALE - 20);
 	
-	putimage(0, 0, imgCenario, COPY_PUT);
+	putimage(0, 0, imgScene, COPY_PUT);
 		
 	setfillstyle(1, COLOR(255, 255, 0));
 	for (int i = 0; i <= nWall; i++) {
