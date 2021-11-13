@@ -52,9 +52,10 @@ void playerJump(Floor *floors, int Floor);
 void playerAttack();
 void freeFall(Floor *floors, int nFloor);
 void enemyMove(Position *positions);
-void enemyAttack();
+void enemyAttack(Position *positions);
 void enemyAI(Position *positions);
-void addPellet(double x, double y, double vx, double vy, int width, int height);
+void updatePellets();
+void addPellet(Pellet);
 void removePellet(int i);
 void clearPellets();
 
@@ -241,6 +242,7 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 	playerJump(floors, nFloor);
 	freeFall(floors, nFloor);
 	enemyAI(positions);
+	updatePellets();
 	
 }
 
@@ -253,10 +255,10 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	putimage(0, 0, imgScene, COPY_PUT);
 		
 //	setfillstyle(1, COLOR(255, 255, 0));
-//	for (int i = 0; i <= nWall; i++) {
+//	for (int i = 0; i < nWall; i++) {
 //		bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
 //	}
-//	for (int i = 0; i <= nFloor; i++) {
+//	for (int i = 0; i < nFloor; i++) {
 //		bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
 //	}
 	
@@ -265,6 +267,14 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
 	setfillstyle(1, COLOR(0, 255, 0));
 	bar(player.x, player.y, player.x + player.width, player.y + player.height);
+	
+	setfillstyle(1, COLOR(255, 255, 0));
+	if (nPelletsGb > 0) {
+		for (int i = 0; i < nPelletsGb; i++) {
+			printf("%d", nPelletsGb);
+			bar(pelletsGb[i].x, pelletsGb[i].y, pelletsGb[i].x + pelletsGb[i].width, pelletsGb[i].y + pelletsGb[i].height);
+		}
+	}
 
 }
 
@@ -355,48 +365,74 @@ void enemyMove(Position *positions) {//movimento do inimigo
 	enemy.y = positions[nextPos].y;
 }
 
-void enemyAttack() {
+void enemyAttack(Position *positions) {
+	
+	int enemyPos;
+	Pellet pellet1, pellet2;
+	
+	//verifica a posicao atual do inimigo
+	if (enemy.x == positions[0].x && enemy.y == positions[0].y) { //posicao 0
+		
+	} else if (enemy.x == positions[1].x && enemy.y == positions[1].y) { //posicao 1
+		
+	} else if (enemy.x == positions[2].x && enemy.y == positions[2].y) { //posicao 2
+		
+		pellet1.x = enemy.x;
+		pellet1.y = enemy.y + enemy.height/2;
+		pellet1.vx = -2;
+		pellet1.vy = 0;
+		pellet1.height = 8;
+		pellet1.width = 8;
+		
+	} else if (enemy.x == positions[3].x && enemy.y == positions[3].y) { //posicao 3
+		
+	} else {
+		return;
+	}
+	
+	addPellet(pellet1);
 	
 }
 
 void enemyAI(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. ao executar, retorna o novo valor do timer
 	enemy.timer++;
-	if (enemy.timer >= 60) {
-		enemyMove(positions);
+	if (enemy.timer >= 20) {
+		//enemyMove(positions);
+		enemyAttack(positions);
 		enemy.timer = 0;
 	}
 }
 
-void addPellet(double x, double y, double vx, double vy, int width, int height) {
-	
-	Pellet pellet;
-	pellet.x = x;
-	pellet.y = y;
-	pellet.vx = vx;
-	pellet.vy = vy;
-	pellet.height = height;
-	pellet.width = width;
-	
+void updatePellets() {
+	if (nPelletsGb > 0) {
+			for (int i = 0; i < nPelletsGb; i++) {
+				pelletsGb[i].x += pelletsGb[i].vx;
+				pelletsGb[i].y += pelletsGb[i].vy;
+				
+				if (pelletsGb[i].x < (WIDTH)) {
+					removePellet(i);
+				}
+		}
+	}
+}
+
+void addPellet(Pellet pellet) {
 	nPelletsGb++;
-	pelletsGb = (Pellet *)malloc(sizeof(Pellet) * nPelletsGb);
+	pelletsGb = (Pellet *)realloc(pelletsGb, sizeof(Pellet) * nPelletsGb);
 	pelletsGb[nPelletsGb-1] = pellet;
 }
 
 void removePellet(int removeIndex) {
 	if (nPelletsGb > 0) {
-		Pellet *temp = (Pellet *)malloc(sizeof(Pellet) * (nPelletsGb - 1));
-		
-		if (removeIndex != 0) 
-        	memcpy(temp, pelletsGb, removeIndex * sizeof(Pellet));
-        	
-        if (removeIndex != (nPelletsGb - 1))
-        	memcpy(temp+removeIndex, pelletsGb+removeIndex+1, (nPelletsGb - removeIndex - 1) * sizeof(Pellet));
-        	
-        free(pelletsGb);
-        nPelletsGb--;
-        pelletsGb = (Pellet *)malloc(sizeof(Pellet) * nPelletsGb);
-        pelletsGb = temp;
-        free(temp);
+		if (removeIndex != nPelletsGb) {
+			for(int i = 0; i < (nPelletsGb-1); i++) {
+				if (i >= removeIndex) {
+					pelletsGb[i] = pelletsGb[i+1];
+				}
+			}
+		}
+		nPelletsGb--;
+		pelletsGb = (Pellet *)realloc(pelletsGb, sizeof(Pellet) * nPelletsGb);
 	}
 }
 
