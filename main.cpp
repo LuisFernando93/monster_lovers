@@ -39,6 +39,12 @@ struct Position {
 	int x,y;
 };
 
+struct Pellet {
+	double x,y;
+	double vx, vy;
+	int width, height;
+};
+
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions);
 void render(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
@@ -48,9 +54,15 @@ void freeFall(Floor *floors, int nFloor);
 void enemyMove(Position *positions);
 void enemyAttack();
 void enemyAI(Position *positions);
+void addPellet(double x, double y, double vx, double vy, int width, int height);
+void removePellet(int i);
+void clearPellets();
 
 Player player;
 Enemy enemy;
+
+Pellet *pelletsGb;
+int nPelletsGb = 0;
 
 void *imgScene;
 
@@ -64,6 +76,7 @@ int main()  {
 	int nFloor = 3;
 	Position pos0, pos1, pos2, pos3;
 	Position *positions;
+	Pellet *pellets;
 	
 	char Tecla;
 	int pg = 1;
@@ -218,6 +231,7 @@ int main()  {
 	free(walls);
 	free(floors);
 	free(positions);
+	free(pelletsGb);
 	free(imgScene);
 }
 
@@ -352,3 +366,43 @@ void enemyAI(Position *positions) { //o inimigo utiliza o timer para fazer suas 
 		enemy.timer = 0;
 	}
 }
+
+void addPellet(double x, double y, double vx, double vy, int width, int height) {
+	
+	Pellet pellet;
+	pellet.x = x;
+	pellet.y = y;
+	pellet.vx = vx;
+	pellet.vy = vy;
+	pellet.height = height;
+	pellet.width = width;
+	
+	nPelletsGb++;
+	pelletsGb = (Pellet *)malloc(sizeof(Pellet) * nPelletsGb);
+	pelletsGb[nPelletsGb-1] = pellet;
+}
+
+void removePellet(int removeIndex) {
+	if (nPelletsGb > 0) {
+		Pellet *temp = (Pellet *)malloc(sizeof(Pellet) * (nPelletsGb - 1));
+		
+		if (removeIndex != 0) 
+        	memcpy(temp, pelletsGb, removeIndex * sizeof(Pellet));
+        	
+        if (removeIndex != (nPelletsGb - 1))
+        	memcpy(temp+removeIndex, pelletsGb+removeIndex+1, (nPelletsGb - removeIndex - 1) * sizeof(Pellet));
+        	
+        free(pelletsGb);
+        nPelletsGb--;
+        pelletsGb = (Pellet *)malloc(sizeof(Pellet) * nPelletsGb);
+        pelletsGb = temp;
+        free(temp);
+	}
+}
+
+void clearPellets() {
+	free(pelletsGb);
+	nPelletsGb = 0;
+}
+
+
