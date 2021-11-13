@@ -165,7 +165,7 @@ int main()  {
 	positions[2] = pos2;
 	positions[3] = pos3;
 	
-	int initialPosition = 3;
+	int initialPosition = 2;
 
 	enemy.x = positions[initialPosition].x;
 	enemy.y = positions[initialPosition].y;
@@ -449,9 +449,14 @@ void enemyAttack(Position *positions) {
 
 void enemyAI(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. ao executar, retorna o novo valor do timer
 	enemy.timer++;
-	if (enemy.timer >= 20) {
-		//enemyMove(positions);
+	if (enemy.timer == 30) {
 		enemyAttack(positions);
+	} else if (enemy.timer == 60) {
+		enemyAttack(positions);
+	} else if (enemy.timer == 90) {
+		enemyAttack(positions);
+	} else if (enemy.timer == 150) {
+		enemyMove(positions);
 		enemy.timer = 0;
 	}
 }
