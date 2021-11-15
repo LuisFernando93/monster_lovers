@@ -1,6 +1,7 @@
 #include<stdio.h>
 #include<iostream>
 #include<graphics.h>
+#include<math.h>
 using namespace std;
 
 #define WIDTH 640
@@ -23,16 +24,18 @@ struct Wall {
 struct Player {
 	int x, y;
 	int width, height;
-	int speed;
-	bool attack, jump, move, moveLeft, moveRight;
+	int life, power, speed;
+	bool attack, jump, move, moveLeft, moveRight, lookRight;
 	int jumpHeight;
 	double vspd;
 };
 
 struct Enemy {
 	int x, y;
+	int life, power;
 	int width, height;
 	int timer;
+	bool damaged;
 };
 
 struct Position {
@@ -85,13 +88,12 @@ int main()  {
 	int pg = 1;
 	int gameState = 1;
 	long long unsigned gt1, gt2;
-  	int fps;
+  	int fps = 60;
   	
   	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
   	
   	gt1 = GetTickCount();
   	gt2 = gt1 + 1200;
-  	fps = 60;
   	
   	int WImgScene, HImgScene, sizeImgScene;
   	
@@ -143,11 +145,14 @@ int main()  {
 	player.x = (WIDTH/2 - 180 )*SCALE;
 	player.y = floor2.y - player.height;
 	player.speed = 8;
+	player.life = 8;
+	player.power = 1;
 	player.attack = false;
 	player.jump = false;
 	player.move = false;
 	player.moveLeft = false;
 	player.moveRight = false;
+	player.lookRight = true;
 	player.jumpHeight = 30;
 	player.vspd = 0;
 	
@@ -175,7 +180,10 @@ int main()  {
 
 	enemy.x = positions[initialPosition].x;
 	enemy.y = positions[initialPosition].y;
+	enemy.life = 8;
+	enemy.power = 1;
 	enemy.timer = 0;
+	enemy.damaged = false;
 	
 	while(Tecla != ESC) {
   		
@@ -203,6 +211,7 @@ int main()  {
   				player.move = true;
   				player.moveLeft = true;
   				player.moveRight = false;
+  				player.lookRight = false;
 			} 
 			
 			if(GetKeyState('W')&0x80) { //cima
@@ -217,6 +226,7 @@ int main()  {
   				player.move = true;
   				player.moveLeft = false;
   				player.moveRight = true;
+  				player.lookRight = true;
 			} 
 			
   			if(GetKeyState(VK_SPACE)&0x80) { //jump
@@ -224,7 +234,7 @@ int main()  {
 			}
 			
 			if(GetKeyState('R')&0x80) { //ataque
-  				
+  				player.attack = true;
 			} 
 				
 			if (kbhit()) {
@@ -252,6 +262,7 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 	
 	playerCollision(walls, nWall, floors, nFloor);
 	playerMove();
+	playerAttack();
 	playerJump(floors, nFloor);
 	freeFall(floors, nFloor);
 	enemyAI(positions);
@@ -344,7 +355,22 @@ void playerJump(Floor *floors, int nFloor) { //pulo do jogador
 }
 
 void playerAttack() {
-	
+	if (player.attack) {
+		double distance;
+		if (player.lookRight) {
+			distance = sqrt(pow(player.x + player.width - enemy.x, 2) + pow(player.y - enemy.y, 2));
+		} else {
+			distance = sqrt(pow(player.x - enemy.x, 2) + pow(player.y - enemy.y, 2));
+		}
+		printf("attack distance: %f ", distance);
+		if (distance <= 100 && !enemy.damaged) {
+			enemy.life -= player.power;
+			enemy.damaged = true;
+			enemy.timer = 0;
+			printf("hit! enemy: %d ", enemy.life);
+		}
+		player.attack = false;
+	}
 }
 
 void freeFall(Floor *floors, int nFloor) { //queda livre
@@ -427,17 +453,29 @@ void enemyAttack(Position *positions) {
 }
 
 void enemyAI(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. ao executar, retorna o novo valor do timer
-	enemy.timer++;
-	if (enemy.timer == 30) {
-		enemyAttack(positions);
-	} else if (enemy.timer == 60) {
-		enemyAttack(positions);
-	} else if (enemy.timer == 90) {
-		enemyAttack(positions);
-	} else if (enemy.timer == 150) {
-		enemyMove(positions);
-		enemy.timer = 0;
+	if (enemy.life > 0) {
+		enemy.timer++;
+		if (!enemy.damaged) {
+			if (enemy.timer == 30) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 60) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 90) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 150) {
+				enemyMove(positions);
+				enemy.timer = 0;
+			}
+		} else {
+			if (enemy.timer == 40) {
+				enemyMove(positions);
+				enemy.damaged = false;
+				enemy.timer = 0;
+			}
+		}
 	}
+	
+	
 }
 
 
