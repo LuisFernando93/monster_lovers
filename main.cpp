@@ -7,7 +7,7 @@ using namespace std;
 #define HEIGHT 248
 #define SCALE 2 
 #define ESC 27
-#define SPRITE_RES 64
+#define SPRITE_RES 128
 #define GRAVITY 2
 
 struct Floor {
@@ -24,7 +24,7 @@ struct Player {
 	int x, y;
 	int width, height;
 	int speed;
-	bool jump;
+	bool attack, jump, move, moveLeft, moveRight;
 	int jumpHeight;
 	double vspd;
 };
@@ -48,6 +48,7 @@ struct Pellet {
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions);
 void render(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
+void playerMove();
 void playerJump(Floor *floors, int Floor);
 void playerAttack();
 void freeFall(Floor *floors, int nFloor);
@@ -136,17 +137,21 @@ int main()  {
 	floors[1] = floor2;
 	floors[2] = floor3;
 	
-	player.width = SPRITE_RES*SCALE;
-	player.height = SPRITE_RES*SCALE;
+	player.width = SPRITE_RES;
+	player.height = SPRITE_RES;
 	player.x = (WIDTH/2 - 180 )*SCALE;
 	player.y = floor2.y - player.height;
-	player.speed = 5;
+	player.speed = 8;
+	player.attack = false;
 	player.jump = false;
+	player.move = false;
+	player.moveLeft = false;
+	player.moveRight = false;
 	player.jumpHeight = 30;
 	player.vspd = 0;
 	
-	enemy.width = SPRITE_RES*SCALE;
-	enemy.height = SPRITE_RES*SCALE;
+	enemy.width = SPRITE_RES;
+	enemy.height = SPRITE_RES;
 		
 	pos0.x = 30*SCALE;
 	pos0.y = floor1.y - enemy.height;
@@ -192,34 +197,38 @@ int main()  {
 			gt2 = GetTickCount();
   			
   			fflush(stdin);
+  			
+  			if(GetKeyState('A')&0x80) { //esquerda
+  				player.move = true;
+  				player.moveLeft = true;
+  				player.moveRight = false;
+			} 
+			
+			if(GetKeyState('W')&0x80) { //cima
+  				player.jump = true;
+			}
+			
+			if(GetKeyState('S')&0x80) { //baixo
+  				
+			} 
+			
+  			if(GetKeyState('D')&0x80) { //direita
+  				player.move = true;
+  				player.moveLeft = false;
+  				player.moveRight = true;
+			} 
+			
+  			if(GetKeyState(VK_SPACE)&0x80) { //jump
+  				player.jump = true;
+			}
+			
+			if(GetKeyState('R')&0x80) { //ataque
+  				
+			} 
 				
-				if (kbhit()) {
-		  			Tecla = getch();
-		  			if(GetKeyState('A')&0x80) { //esquerda
-		  				player.x -= player.speed;
-					} 
-					
-					if(GetKeyState('W')&0x80) { //cima
-		  				player.jump = true;
-					}
-					
-					if(GetKeyState('S')&0x80) { //baixo
-		  				
-					} 
-					
-		  			if(GetKeyState('D')&0x80) { //direita
-		  				player.x += player.speed;
-					} 
-					
-		  			if(GetKeyState(VK_SPACE)&0x80) { //jump
-		  				player.jump = true;
-					}
-					
-					if(GetKeyState('R')&0x80) { //ataque
-		  				
-					} 
-						
-				} 
+			if (kbhit()) {
+		  		Tecla = getch();	
+			} 
   			
 		} else if (gameState == 0) { //menu
 		
@@ -241,6 +250,7 @@ int main()  {
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions) {
 	
 	playerCollision(walls, nWall, floors, nFloor);
+	playerMove();
 	playerJump(floors, nFloor);
 	freeFall(floors, nFloor);
 	enemyAI(positions);
@@ -273,7 +283,6 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	setfillstyle(1, COLOR(255, 255, 0));
 	if (nPelletsGb > 0) {
 		for (int i = 0; i < nPelletsGb; i++) {
-			printf("%d ", nPelletsGb);
 			bar(pelletsGb[i].x, pelletsGb[i].y, pelletsGb[i].x + pelletsGb[i].width, pelletsGb[i].y + pelletsGb[i].height);
 		}
 	}
@@ -306,12 +315,25 @@ void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	}
 }
 
+void playerMove() {
+	if (player.move) {
+		if (player.moveLeft) {
+			player.x -= player.speed;
+			player.moveLeft = false;
+		} else if (player.moveRight) {
+			player.x += player.speed;
+			player.moveRight = false;
+		}
+		player.move = false;
+	}
+}
+
 void playerJump(Floor *floors, int nFloor) { //pulo do jogador
 	
 	if (player.jump) {
 			for (int i = 0; i <= nFloor; i++) {
 			if (!(player.x + player.width <= floors[i].x) && !(player.x >= floors[i].x + floors[i].width)) {
-				if ((player.y+player.height >= floors[i].y) && (player.y+player.height <= floors[i].y + floors[i].height)) {
+				if ((player.y+player.height >= floors[i].y) && (player.y+player.height <= floors[i].y + floors[i].height) && player.vspd == 0) {
 					player.vspd = -(player.jumpHeight);
 				}
 			}
