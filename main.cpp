@@ -26,6 +26,7 @@ struct Player {
 	int width, height;
 	int life, power, speed;
 	bool attack, jump, move, moveLeft, moveRight, lookRight;
+	bool damaged;
 	int jumpHeight;
 	double vspd;
 };
@@ -153,6 +154,7 @@ int main()  {
 	player.moveLeft = false;
 	player.moveRight = false;
 	player.lookRight = true;
+	player.damaged = false;
 	player.jumpHeight = 30;
 	player.vspd = 0;
 	
@@ -358,9 +360,9 @@ void playerAttack() {
 	if (player.attack) {
 		double distance;
 		if (player.lookRight) {
-			distance = sqrt(pow(player.x + player.width - enemy.x, 2) + pow(player.y - enemy.y, 2));
+			distance = sqrt(pow(player.x + player.width - enemy.x, 2 ) + pow(player.y - enemy.y, 2));
 		} else {
-			distance = sqrt(pow(player.x - enemy.x, 2) + pow(player.y - enemy.y, 2));
+			distance = sqrt(pow(player.x - enemy.x - enemy.width, 2) + pow(player.y - enemy.y, 2));
 		}
 		printf("attack distance: %f ", distance);
 		if (distance <= 100 && !enemy.damaged) {
@@ -489,6 +491,8 @@ void updatePellets() {
 				if (pelletsGb[i].x <= (0*SCALE) || pelletsGb[i].x >= (WIDTH*SCALE) || pelletsGb[i].y <= (0*SCALE) || pelletsGb[i].y >= (HEIGHT*SCALE)) {
 					removePellet(i);
 				}
+				
+				
 		}
 	}
 }
