@@ -56,6 +56,7 @@ void enemyMove(Position *positions);
 void enemyAttack(Position *positions);
 void enemyAI(Position *positions);
 void updatePellets();
+Pellet createPellet(int number, int position);
 void addPellet(Pellet);
 void removePellet(int i);
 void clearPellets();
@@ -396,69 +397,25 @@ void enemyAttack(Position *positions) {
 	
 	//verifica a posicao atual do inimigo
 	if (enemy.x == positions[0].x && enemy.y == positions[0].y) { //posicao 0
-	
-		pellet1.height = 8;
-		pellet1.width = 8;
-		pellet1.x = enemy.x + enemy.width;
-		pellet1.y = enemy.y + enemy.height/2 - pellet1.height/2;
-		pellet1.vx = 5;
-		pellet1.vy = 0;
-		
-		pellet2.height = 8;
-		pellet2.width = 8;
-		pellet2.x = enemy.x + enemy.width;
-		pellet2.y = enemy.y + enemy.height/2 - pellet1.height/2;
-		pellet2.vx = 5;
-		pellet2.vy = -2;
+
+		pellet1 = createPellet(1, 0);
+		pellet2 = createPellet(2, 0);
 		
 	} else if (enemy.x == positions[1].x && enemy.y == positions[1].y) { //posicao 1
-	
-		pellet1.height = 8;
-		pellet1.width = 8;
-		pellet1.x = enemy.x + enemy.width;
-		pellet1.y = enemy.y + enemy.height/2 - pellet1.height/2;
-		pellet1.vx = 5;
-		pellet1.vy = 0;
-		
-		pellet2.height = 8;
-		pellet2.width = 8;
-		pellet2.x = enemy.x + enemy.width;
-		pellet2.y = enemy.y + enemy.height/2 - pellet1.height/2;
-		pellet2.vx = 5;
-		pellet2.vy = 2;
+
+		pellet1 = createPellet(1, 1);
+		pellet2 = createPellet(2, 1);
 		
 	} else if (enemy.x == positions[2].x && enemy.y == positions[2].y) { //posicao 2
-		
-		pellet1.height = 8;
-		pellet1.width = 8;
-		pellet1.x = enemy.x;
-		pellet1.y = enemy.y + enemy.height/2 - pellet1.height/2;
-		pellet1.vx = -5;
-		pellet1.vy = 0;
-		
-		pellet2.height = 8;
-		pellet2.width = 8;
-		pellet2.x = enemy.x;
-		pellet2.y = enemy.y + enemy.height/2 - pellet1.height/2;
-		pellet2.vx = -5;
-		pellet2.vy = 2;
+
+		pellet1 = createPellet(1, 2);
+		pellet2 = createPellet(2, 2);
 		
 		
 	} else if (enemy.x == positions[3].x && enemy.y == positions[3].y) { //posicao 3
-		
-		pellet1.height = 8;
-		pellet1.width = 8;
-		pellet1.x = enemy.x;
-		pellet1.y = enemy.y + enemy.height/2 - pellet1.height/2;
-		pellet1.vx = -5;
-		pellet1.vy = 0;
-		
-		pellet2.height = 8;
-		pellet2.width = 8;
-		pellet2.x = enemy.x;
-		pellet2.y = enemy.y + enemy.height/2 - pellet1.height/2;
-		pellet2.vx = -5;
-		pellet2.vy = -2;
+
+		pellet1 = createPellet(1, 3);
+		pellet2 = createPellet(2, 3);
 		
 	} else {
 		return;
@@ -483,6 +440,8 @@ void enemyAI(Position *positions) { //o inimigo utiliza o timer para fazer suas 
 	}
 }
 
+
+
 void updatePellets() {
 	if (nPelletsGb > 0) {
 			for (int i = 0; i < nPelletsGb; i++) {
@@ -494,6 +453,77 @@ void updatePellets() {
 				}
 		}
 	}
+}
+
+Pellet createPellet(int number, int position) {
+	
+	Pellet pellet;
+	int speedX = 5;
+	int speedY1 = 0;
+	int speedY2 = 2;
+	
+	pellet.height = 8;
+	pellet.width = 8;
+	pellet.y = enemy.y + enemy.height/2 - pellet.height/2;
+	
+	if (number == 1) {
+		
+		if (position == 0) {
+			
+			pellet.x = enemy.x + enemy.width;
+			pellet.vx = speedX;
+			pellet.vy = speedY1;
+			
+		} else if(position == 1) {
+			
+			pellet.x = enemy.x + enemy.width;
+			pellet.vx = speedX;
+			pellet.vy = speedY1;
+			
+		} else if(position == 2) {
+			
+			pellet.x = enemy.x;
+			pellet.vx = -speedX;
+			pellet.vy = speedY1;
+			
+		} else if(position == 3) {
+			
+			pellet.x = enemy.x;
+			pellet.vx = -speedX;
+			pellet.vy = speedY1;
+			
+		}
+		
+	} else if (number == 2) {
+		
+		if (position == 0) {
+			
+			pellet.x = enemy.x + enemy.width;
+			pellet.vx = speedX;
+			pellet.vy = -speedY2;
+			
+		} else if(position == 1) {
+			
+			pellet.x = enemy.x + enemy.width;
+			pellet.vx = speedX;
+			pellet.vy = speedY2;
+			
+		} else if(position == 2) {
+			
+			pellet.x = enemy.x;
+			pellet.vx = -speedX;
+			pellet.vy = speedY2;
+			
+		} else if(position == 3) {
+			
+			pellet.x = enemy.x;
+			pellet.vx = -speedX;
+			pellet.vy = -speedY2;
+			
+		}
+	}
+	
+	return pellet;
 }
 
 void addPellet(Pellet pellet) {
