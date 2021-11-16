@@ -56,7 +56,7 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor);
 void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerMove();
-void playerJump(Floor *floors, int Floor);
+void playerJump(Floor *floors, int nFloor);
 void playerAttack();
 void playerCheckLife();
 void freeFall(Floor *floors, int nFloor);
@@ -69,6 +69,7 @@ Pellet createPellet(int number, int position);
 void addPellet(Pellet);
 void removePellet(int i);
 void clearPellets();
+void newGame(Floor *floors, int nFloor, Position *positions, int initPos);
 
 Player player;
 Enemy enemy;
@@ -90,7 +91,6 @@ int main()  {
 	int nFloor = 3;
 	Position pos0, pos1, pos2, pos3;
 	Position *positions;
-	Pellet *pellets;
 	
 	char Tecla;
 	int pg = 1;
@@ -151,20 +151,6 @@ int main()  {
 	
 	player.width = SPRITE_RES;
 	player.height = SPRITE_RES;
-	player.x = (WIDTH/2 - 180 )*SCALE;
-	player.y = floor2.y - player.height;
-	player.speed = 8;
-	player.life = 1;
-	player.power = 1;
-	player.attack = false;
-	player.jump = false;
-	player.move = false;
-	player.moveLeft = false;
-	player.moveRight = false;
-	player.lookRight = true;
-	player.damaged = false;
-	player.jumpHeight = 30;
-	player.vspd = 0;
 	
 	enemy.width = SPRITE_RES;
 	enemy.height = SPRITE_RES;
@@ -186,14 +172,9 @@ int main()  {
 	positions[2] = pos2;
 	positions[3] = pos3;
 	
-	int initialPosition = 2;
-
-	enemy.x = positions[initialPosition].x;
-	enemy.y = positions[initialPosition].y;
-	enemy.life = 8;
-	enemy.power = 1;
-	enemy.timer = 0;
-	enemy.damaged = false;
+	int initPos = 2;
+	
+	newGame(floors, nFloor, positions, initPos);
 	
 	while(Tecla != ESC) {
    			
@@ -214,6 +195,12 @@ int main()  {
 		gt2 = GetTickCount();
 		
 		fflush(stdin);
+		
+		if (restart == true) {
+			newGame(floors, nFloor, positions, initPos);
+			gameStateGb = 1;
+			restart = false;
+		}
 		
 		if(gameStateGb == 1) { //jogo
 			
@@ -251,14 +238,12 @@ int main()  {
 			
 			if(GetKeyState(ENTER)&0x80) { //restart
 				restart = true;
-				printf("restart");
 			}	
 
 		} else if(gameStateGb == 3) { //game over
 		
 			if(GetKeyState(ENTER)&0x80) { //restart
 				restart = true;
-				printf("restart");
 			}
 
 		}
@@ -646,4 +631,31 @@ void clearPellets() {
 	free(pelletsGb);
 	nPelletsGb = 0;
 	pelletsGb = (Pellet *)malloc(sizeof(Pellet) * nPelletsGb);
+}
+
+void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
+	
+	player.x = (WIDTH/2 - 180 )*SCALE;
+	player.y = floors[1].y - player.height;
+	player.speed = 8;
+	player.life = 8;
+	player.power = 1;
+	player.attack = false;
+	player.jump = false;
+	player.move = false;
+	player.moveLeft = false;
+	player.moveRight = false;
+	player.lookRight = true;
+	player.damaged = false;
+	player.jumpHeight = 30;
+	player.vspd = 0;
+	
+	enemy.x = positions[initPos].x;
+	enemy.y = positions[initPos].y;
+	enemy.life = 8;
+	enemy.power = 1;
+	enemy.timer = 0;
+	enemy.damaged = false;
+	
+	clearPellets();
 }
