@@ -151,7 +151,7 @@ int main()  {
 	player.y = floor2.y - player.height;
 	player.speed = 8;
 	player.life = 8;
-	player.power = 1;
+	player.power = 8;
 	player.attack = false;
 	player.jump = false;
 	player.move = false;
@@ -386,6 +386,17 @@ void playerAttack() {
 
 void playerCheckLife() {
 	
+	if(player.life <= 0) { //player derrotado. game over
+		return;
+	}
+	
+	if(player.damaged) { //player machucado. frames de invencibilidade
+		player.timerDamaged++;
+		if(player.timerDamaged >= 40) {
+			player.timerDamaged = 0;
+			player.damaged = false;
+		}
+	}
 }
 
 void freeFall(Floor *floors, int nFloor) { //queda livre
@@ -405,7 +416,7 @@ void freeFall(Floor *floors, int nFloor) { //queda livre
 	player.y += (int)player.vspd;
 }
 
-void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. ao executar, retorna o novo valor do timer
+void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. 
 	if (enemy.life > 0) {
 		enemy.timer++;
 		if (!enemy.damaged) {
@@ -506,11 +517,13 @@ void updatePellets() {
 				removePellet(i);
 			}
 			
-			if (pelletsGb[i].x >= player.x && pelletsGb[i].x - 1 <= player.x + player.width && pelletsGb[i].y >= player.y && pelletsGb[i].y - 1  <= player.y + player.height) {
-				removePellet(i);
-				player.life -= enemy.power;
-				player.damaged = true;
-				printf("Damaged player: %d ", player.life);
+			if (pelletsGb[i].x >= player.x && pelletsGb[i].x - 1 <= player.x + player.width && pelletsGb[i].y >= player.y && pelletsGb[i].y - 1  <= player.y + player.height) { //acerta player
+				if (!player.damaged) {
+					removePellet(i);
+					player.life -= enemy.power;
+					player.damaged = true;
+					printf("Damaged player: %d ", player.life);
+				}
 			}				
 		}
 	}
