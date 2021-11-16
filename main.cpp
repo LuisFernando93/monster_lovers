@@ -27,6 +27,7 @@ struct Player {
 	int life, power, speed;
 	bool attack, jump, move, moveLeft, moveRight, lookRight;
 	bool damaged;
+	int timerDamaged;
 	int jumpHeight;
 	double vspd;
 };
@@ -51,14 +52,17 @@ struct Pellet {
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions);
 void render(Wall *walls, int nWall, Floor *floors, int nFloor);
+void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerMove();
 void playerJump(Floor *floors, int Floor);
 void playerAttack();
+void playerCheckLife();
 void freeFall(Floor *floors, int nFloor);
+void updateEnemy(Position *positions);
 void enemyMove(Position *positions);
 void enemyAttack(Position *positions);
-void enemyAI(Position *positions);
+void enemyCheckLife();
 void updatePellets();
 Pellet createPellet(int number, int position);
 void addPellet(Pellet);
@@ -101,7 +105,7 @@ int main()  {
   	WImgScene = 1280;
   	HImgScene = 496;
   	
-  	readimagefile("cenario.bmp", 0, 0, WImgScene - 1, HImgScene - 1);
+  	readimagefile(".\\res\\cenario.bmp", 0, 0, WImgScene - 1, HImgScene - 1);
   	sizeImgScene = imagesize(0, 0, WImgScene - 1, HImgScene - 1);
   	imgScene = malloc(sizeImgScene);
 	getimage(0, 0, WImgScene-1, HImgScene-1, imgScene);
@@ -262,12 +266,10 @@ int main()  {
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions) {
 	
-	playerCollision(walls, nWall, floors, nFloor);
-	playerMove();
-	playerAttack();
+	updatePlayer(walls, nWall, floors, nFloor);
 	playerJump(floors, nFloor);
 	freeFall(floors, nFloor);
-	enemyAI(positions);
+	updateEnemy(positions);
 	updatePellets();
 	
 }
@@ -301,6 +303,13 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 		}
 	}
 
+}
+void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor) {
+	
+	playerCollision(walls, nWall, floors, nFloor);
+	playerMove();
+	playerAttack();
+	playerCheckLife();
 }
 
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
@@ -375,6 +384,10 @@ void playerAttack() {
 	}
 }
 
+void playerCheckLife() {
+	
+}
+
 void freeFall(Floor *floors, int nFloor) { //queda livre
 	
 	player.vspd += GRAVITY;
@@ -390,6 +403,31 @@ void freeFall(Floor *floors, int nFloor) { //queda livre
 		}
 	}
 	player.y += (int)player.vspd;
+}
+
+void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. ao executar, retorna o novo valor do timer
+	if (enemy.life > 0) {
+		enemy.timer++;
+		if (!enemy.damaged) {
+			if (enemy.timer == 30) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 90) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 150) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 240) {
+				enemyMove(positions);
+				enemy.timer = 0;
+			}
+		} else {
+			if (enemy.timer == 40) {
+				enemyMove(positions);
+				enemy.damaged = false;
+				enemy.timer = 0;
+			}
+		}
+	}
+	
 }
 
 void enemyMove(Position *positions) {//movimento do inimigo
@@ -454,45 +492,26 @@ void enemyAttack(Position *positions) {
 	
 }
 
-void enemyAI(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. ao executar, retorna o novo valor do timer
-	if (enemy.life > 0) {
-		enemy.timer++;
-		if (!enemy.damaged) {
-			if (enemy.timer == 30) {
-				enemyAttack(positions);
-			} else if (enemy.timer == 60) {
-				enemyAttack(positions);
-			} else if (enemy.timer == 90) {
-				enemyAttack(positions);
-			} else if (enemy.timer == 150) {
-				enemyMove(positions);
-				enemy.timer = 0;
-			}
-		} else {
-			if (enemy.timer == 40) {
-				enemyMove(positions);
-				enemy.damaged = false;
-				enemy.timer = 0;
-			}
-		}
-	}
-	
+void enemyCheckLife() {
 	
 }
 
-
-
 void updatePellets() {
 	if (nPelletsGb > 0) {
-			for (int i = 0; i < nPelletsGb; i++) {
-				pelletsGb[i].x += pelletsGb[i].vx;
-				pelletsGb[i].y += pelletsGb[i].vy;
-				
-				if (pelletsGb[i].x <= (0*SCALE) || pelletsGb[i].x >= (WIDTH*SCALE) || pelletsGb[i].y <= (0*SCALE) || pelletsGb[i].y >= (HEIGHT*SCALE)) {
-					removePellet(i);
-				}
-				
-				
+		for (int i = 0; i < nPelletsGb; i++) {
+			pelletsGb[i].x += pelletsGb[i].vx;
+			pelletsGb[i].y += pelletsGb[i].vy;
+			
+			if (pelletsGb[i].x <= (0*SCALE) || pelletsGb[i].x >= (WIDTH*SCALE) || pelletsGb[i].y <= (0*SCALE) || pelletsGb[i].y >= (HEIGHT*SCALE)) {
+				removePellet(i);
+			}
+			
+			if (pelletsGb[i].x >= player.x && pelletsGb[i].x - 1 <= player.x + player.width && pelletsGb[i].y >= player.y && pelletsGb[i].y - 1  <= player.y + player.height) {
+				removePellet(i);
+				player.life -= enemy.power;
+				player.damaged = true;
+				printf("Damaged player: %d ", player.life);
+			}				
 		}
 	}
 }
@@ -564,7 +583,6 @@ Pellet createPellet(int number, int position) {
 			
 		}
 	}
-	
 	return pellet;
 }
 
@@ -593,5 +611,3 @@ void clearPellets() {
 	nPelletsGb = 0;
 	pelletsGb = (Pellet *)malloc(sizeof(Pellet) * nPelletsGb);
 }
-
-
