@@ -75,6 +75,8 @@ Enemy enemy;
 Pellet *pelletsGb;
 int nPelletsGb = 0;
 
+int gameStateGb = 1; //menu = 0; jogo = 1, creditos = 2, game over = 3
+
 void *imgScene;
 
 int main()  { 
@@ -91,7 +93,6 @@ int main()  {
 	
 	char Tecla;
 	int pg = 1;
-	int gameState = 1;
 	long long unsigned gt1, gt2;
   	int fps = 60;
   	
@@ -150,8 +151,8 @@ int main()  {
 	player.x = (WIDTH/2 - 180 )*SCALE;
 	player.y = floor2.y - player.height;
 	player.speed = 8;
-	player.life = 8;
-	player.power = 8;
+	player.life = 1;
+	player.power = 1;
 	player.attack = false;
 	player.jump = false;
 	player.move = false;
@@ -192,69 +193,63 @@ int main()  {
 	enemy.damaged = false;
 	
 	while(Tecla != ESC) {
-  		
-  		if (gameState == 1) { //jogo
-  			
-  			if (gt2 - gt1 > (1000/fps)) {
-  				
-  				gt1 = gt2;
-  				
-  				if (pg == 1) pg = 2; else pg = 1;
-		  		setactivepage(pg);
-				
-				cleardevice();
-				update(walls, nWall, floors, nFloor, positions);
-				render(walls, nWall, floors, nFloor);
-				setvisualpage(pg);
-				
-			}
+   			
+		if (gt2 - gt1 > (1000/fps)) {
 			
-			gt2 = GetTickCount();
-  			
-  			fflush(stdin);
-  			
-  			if(GetKeyState('A')&0x80) { //esquerda
-  				player.move = true;
-  				player.moveLeft = true;
-  				player.moveRight = false;
-  				player.lookRight = false;
+			gt1 = gt2;
+			
+			if (pg == 1) pg = 2; else pg = 1;
+	  		setactivepage(pg);
+			
+			cleardevice();
+			update(walls, nWall, floors, nFloor, positions);
+			render(walls, nWall, floors, nFloor);
+			setvisualpage(pg);
+			
+		}
+		
+		gt2 = GetTickCount();
+		
+		fflush(stdin);
+		
+		if(gameStateGb == 1) { //jogo
+			
+			if(GetKeyState('A')&0x80) { //esquerda
+				player.move = true;
+				player.moveLeft = true;
+				player.moveRight = false;
+				player.lookRight = false;
 			} 
 			
 			if(GetKeyState('W')&0x80) { //cima
-  				player.jump = true;
+				player.jump = true;
 			}
 			
 			if(GetKeyState('S')&0x80) { //baixo
-  				
+				
 			} 
 			
-  			if(GetKeyState('D')&0x80) { //direita
-  				player.move = true;
-  				player.moveLeft = false;
-  				player.moveRight = true;
-  				player.lookRight = true;
+			if(GetKeyState('D')&0x80) { //direita
+				player.move = true;
+				player.moveLeft = false;
+				player.moveRight = true;
+				player.lookRight = true;
 			} 
 			
-  			if(GetKeyState(VK_SPACE)&0x80) { //jump
-  				player.jump = true;
+			if(GetKeyState(VK_SPACE)&0x80) { //jump
+				player.jump = true;
 			}
 			
 			if(GetKeyState('R')&0x80) { //ataque
-  				player.attack = true;
+				player.attack = true;
 			} 
-				
-			if (kbhit()) {
-		  		Tecla = getch();	
-			} 
-  			
-		} else if (gameState == 0) { //menu
-		
-			fflush(stdin);
-			if (kbhit()) {
-	  			
-			} 
-			
 		}
+		
+		
+			
+		if (kbhit()) {
+	  		Tecla = getch();	
+		} 
 
 	}
 	free(walls);
@@ -266,41 +261,51 @@ int main()  {
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions) {
 	
-	updatePlayer(walls, nWall, floors, nFloor);
-	playerJump(floors, nFloor);
-	freeFall(floors, nFloor);
-	updateEnemy(positions);
-	updatePellets();
+	if(gameStateGb == 1) { //jogo
+		updatePlayer(walls, nWall, floors, nFloor);
+		playerJump(floors, nFloor);
+		freeFall(floors, nFloor);
+		updateEnemy(positions);
+		updatePellets();
+	}
 	
 }
 
 void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
-	setcolor(COLOR(79, 0, 201));
-	setfillstyle(1, COLOR(79, 0, 201));
-	bar(20, 20, WIDTH*SCALE - 20, HEIGHT*SCALE - 20);
-	
-	putimage(0, 0, imgScene, COPY_PUT);
+	if (gameStateGb == 1) {		
 		
-//	setfillstyle(1, COLOR(255, 255, 0));
-//	for (int i = 0; i < nWall; i++) {
-//		bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
-//	}
-//	for (int i = 0; i < nFloor; i++) {
-//		bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
-//	}
-	
-	setfillstyle(1, COLOR(255, 0, 0));
-	bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
-	
-	setfillstyle(1, COLOR(0, 255, 0));
-	bar(player.x, player.y, player.x + player.width, player.y + player.height);
-	
-	setfillstyle(1, COLOR(255, 255, 0));
-	if (nPelletsGb > 0) {
-		for (int i = 0; i < nPelletsGb; i++) {
-			bar(pelletsGb[i].x, pelletsGb[i].y, pelletsGb[i].x + pelletsGb[i].width, pelletsGb[i].y + pelletsGb[i].height);
+		putimage(0, 0, imgScene, COPY_PUT);
+			
+	//	setfillstyle(1, COLOR(255, 255, 0));
+	//	for (int i = 0; i < nWall; i++) {
+	//		bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
+	//	}
+	//	for (int i = 0; i < nFloor; i++) {
+	//		bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
+	//	}
+		
+		setfillstyle(1, COLOR(255, 0, 0));
+		bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
+		
+		setfillstyle(1, COLOR(0, 255, 0));
+		bar(player.x, player.y, player.x + player.width, player.y + player.height);
+		
+		setfillstyle(1, COLOR(255, 255, 0));
+		if (nPelletsGb > 0) {
+			for (int i = 0; i < nPelletsGb; i++) {
+				bar(pelletsGb[i].x, pelletsGb[i].y, pelletsGb[i].x + pelletsGb[i].width, pelletsGb[i].y + pelletsGb[i].height);
+			}
 		}
+	} else if (gameStateGb == 2) { //creditos
+		setfillstyle(1, COLOR(0, 255, 0));
+		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
+		printf("Vitoria ");
+		
+	} else if (gameStateGb == 3) { //game over
+		setfillstyle(1, COLOR(255, 0, 0));
+		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
+		printf("Game Over ");
 	}
 
 }
@@ -387,6 +392,7 @@ void playerAttack() {
 void playerCheckLife() {
 	
 	if(player.life <= 0) { //player derrotado. game over
+		gameStateGb = 3;
 		return;
 	}
 	
@@ -417,25 +423,24 @@ void freeFall(Floor *floors, int nFloor) { //queda livre
 }
 
 void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. 
-	if (enemy.life > 0) {
-		enemy.timer++;
-		if (!enemy.damaged) {
-			if (enemy.timer == 30) {
-				enemyAttack(positions);
-			} else if (enemy.timer == 90) {
-				enemyAttack(positions);
-			} else if (enemy.timer == 150) {
-				enemyAttack(positions);
-			} else if (enemy.timer == 240) {
-				enemyMove(positions);
-				enemy.timer = 0;
-			}
-		} else {
-			if (enemy.timer == 40) {
-				enemyMove(positions);
-				enemy.damaged = false;
-				enemy.timer = 0;
-			}
+	enemyCheckLife();
+	enemy.timer++;
+	if (!enemy.damaged) {
+		if (enemy.timer == 30) {
+			enemyAttack(positions);
+		} else if (enemy.timer == 90) {
+			enemyAttack(positions);
+		} else if (enemy.timer == 150) {
+			enemyAttack(positions);
+		} else if (enemy.timer == 240) {
+			enemyMove(positions);
+			enemy.timer = 0;
+		}
+	} else {
+		if (enemy.timer == 40) {
+			enemyMove(positions);
+			enemy.damaged = false;
+			enemy.timer = 0;
 		}
 	}
 	
@@ -504,7 +509,9 @@ void enemyAttack(Position *positions) {
 }
 
 void enemyCheckLife() {
-	
+	if (enemy.life <= 0) { //inimigo derrotado. vitoria.
+		gameStateGb = 2;
+	}
 }
 
 void updatePellets() {
