@@ -8,6 +8,7 @@ using namespace std;
 #define HEIGHT 248
 #define SCALE 2 
 #define ESC 27
+#define ENTER 13
 #define SPRITE_RES 128
 #define GRAVITY 2
 
@@ -95,6 +96,8 @@ int main()  {
 	int pg = 1;
 	long long unsigned gt1, gt2;
   	int fps = 60;
+  	
+  	bool restart = false;
   	
   	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
   	
@@ -243,9 +246,22 @@ int main()  {
 			if(GetKeyState('R')&0x80) { //ataque
 				player.attack = true;
 			} 
+			
+		} else if(gameStateGb == 2) { //creditos
+			
+			if(GetKeyState(ENTER)&0x80) { //restart
+				restart = true;
+				printf("restart");
+			}	
+
+		} else if(gameStateGb == 3) { //game over
+		
+			if(GetKeyState(ENTER)&0x80) { //restart
+				restart = true;
+				printf("restart");
+			}
+
 		}
-		
-		
 			
 		if (kbhit()) {
 	  		Tecla = getch();	
