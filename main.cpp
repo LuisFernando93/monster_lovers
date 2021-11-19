@@ -109,7 +109,7 @@ int main()  {
   	WImgScene = 1280;
   	HImgScene = 496;
   	
-  	readimagefile(".\\res\\cenario.bmp", 0, 0, WImgScene - 1, HImgScene - 1);
+  	readimagefile(".\\res\\imagem\\cenario.bmp", 0, 0, WImgScene - 1, HImgScene - 1);
   	sizeImgScene = imagesize(0, 0, WImgScene - 1, HImgScene - 1);
   	imgScene = malloc(sizeImgScene);
 	getimage(0, 0, WImgScene-1, HImgScene-1, imgScene);
@@ -286,7 +286,7 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	//		bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
 	//	}
 		
-		setfillstyle(1, COLOR(255, 0, 0));
+		if (!enemy.damaged) setfillstyle(1, COLOR(255, 0, 0)); else setfillstyle(1, COLOR(0, 0, 255));
 		bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
 		
 		setfillstyle(1, COLOR(0, 255, 0));
@@ -379,8 +379,8 @@ void playerAttack() {
 		} else {
 			distance = sqrt(pow(player.x - enemy.x - enemy.width, 2) + pow(player.y - enemy.y, 2));
 		}
-		printf("attack distance: %f ", distance);
-		if (distance <= 100 && !enemy.damaged) {
+		//printf("attack distance: %f ", distance);
+		if (distance <= 100 && !enemy.damaged) { //ataque acertou
 			enemy.life -= player.power;
 			enemy.damaged = true;
 			enemy.timer = 0;
