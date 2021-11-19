@@ -109,7 +109,7 @@ int main()  {
   	WImgScene = 1280;
   	HImgScene = 496;
   	
-  	readimagefile(".\\res\\imagem\\cenario.bmp", 0, 0, WImgScene - 1, HImgScene - 1);
+  	readimagefile(".\\res\\image\\cenario.bmp", 0, 0, WImgScene - 1, HImgScene - 1);
   	sizeImgScene = imagesize(0, 0, WImgScene - 1, HImgScene - 1);
   	imgScene = malloc(sizeImgScene);
 	getimage(0, 0, WImgScene-1, HImgScene-1, imgScene);
@@ -289,7 +289,7 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 		if (!enemy.damaged) setfillstyle(1, COLOR(255, 0, 0)); else setfillstyle(1, COLOR(0, 0, 255));
 		bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
 		
-		setfillstyle(1, COLOR(0, 255, 0));
+		if (!player.damaged) setfillstyle(1, COLOR(0, 255, 0)); else setfillstyle(1, COLOR(255, 255, 255));
 		bar(player.x, player.y, player.x + player.width, player.y + player.height);
 		
 		setfillstyle(1, COLOR(255, 255, 0));
