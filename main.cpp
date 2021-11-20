@@ -99,6 +99,13 @@ int main()  {
   	
   	bool restart = false;
   	
+  	mciSendString("open .\\res\\audio\\Uberpunch(game).mp3 type MPEGVideo alias game", NULL, 0, 0); 
+  	mciSendString("open .\\res\\audio\\One Destination - Two Journeys(menu).mp3 type MPEGVideo alias menu", NULL, 0, 0);  
+	mciSendString("open .\\res\\audio\\Dreams of Vain(gameover).mp3 type MPEGVideo alias gameover", NULL, 0, 0);  
+  	mciSendString("open .\\res\\audio\\After the End(credits).mp3 type MPEGVideo alias credits", NULL, 0, 0); 
+  	
+  	waveOutSetVolume(0,0xFFFFFFFF);
+  	
   	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
   	
   	gt1 = GetTickCount();
@@ -173,6 +180,8 @@ int main()  {
 	positions[3] = pos3;
 	
 	int initPos = 2;
+	
+	//mciSendString("play game repeat", NULL, 0, 0);
 	
 	newGame(floors, nFloor, positions, initPos);
 	
@@ -258,6 +267,12 @@ int main()  {
 	free(positions);
 	free(pelletsGb);
 	free(imgScene);
+	
+	mciSendString("close menu", NULL, 0, 0);
+	mciSendString("close game", NULL, 0, 0);
+	mciSendString("close gameover", NULL, 0, 0);
+	mciSendString("close credits", NULL, 0, 0);
+	
 }
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions) {
@@ -381,6 +396,7 @@ void playerAttack() {
 		}
 		//printf("attack distance: %f ", distance);
 		if (distance <= 100 && !enemy.damaged) { //ataque acertou
+			sndPlaySound(".\\res\\audio\\hitEnemy.wav", SND_ASYNC);
 			enemy.life -= player.power;
 			enemy.damaged = true;
 			enemy.timer = 0;
@@ -528,6 +544,7 @@ void updatePellets() {
 			if (pelletsGb[i].x >= player.x && pelletsGb[i].x - 1 <= player.x + player.width && pelletsGb[i].y >= player.y && pelletsGb[i].y - 1  <= player.y + player.height) { //acerta player
 				if (!player.damaged) {
 					removePellet(i);
+					sndPlaySound(".\\res\\audio\\hitPlayer.wav", SND_ASYNC);
 					player.life -= enemy.power;
 					player.damaged = true;
 					printf("Damaged player: %d ", player.life);
