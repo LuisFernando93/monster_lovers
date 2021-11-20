@@ -70,6 +70,7 @@ void addPellet(Pellet);
 void removePellet(int i);
 void clearPellets();
 void newGame(Floor *floors, int nFloor, Position *positions, int initPos);
+void changeGameState(int newState);
 
 Player player;
 Enemy enemy;
@@ -77,7 +78,7 @@ Enemy enemy;
 Pellet *pelletsGb;
 int nPelletsGb = 0;
 
-int gameStateGb = 1; //menu = 0; jogo = 1, creditos = 2, game over = 3
+int gameStateGb = -1; //menu = 0; jogo = 1, creditos = 2, game over = 3
 
 void *imgScene;
 
@@ -100,9 +101,9 @@ int main()  {
   	bool restart = false;
   	
   	mciSendString("open .\\res\\audio\\Uberpunch(game).mp3 type MPEGVideo alias game", NULL, 0, 0); 
-  	mciSendString("open .\\res\\audio\\One Destination - Two Journeys(menu).mp3 type MPEGVideo alias menu", NULL, 0, 0);  
-	mciSendString("open .\\res\\audio\\Dreams of Vain(gameover).mp3 type MPEGVideo alias gameover", NULL, 0, 0);  
-  	mciSendString("open .\\res\\audio\\After the End(credits).mp3 type MPEGVideo alias credits", NULL, 0, 0); 
+  	mciSendString("open .\\res\\audio\\OneDestination-TwoJourneys(menu).mp3 type MPEGVideo alias menu", NULL, 0, 0);  
+	mciSendString("open .\\res\\audio\\DreamsOfVain(gameover).mp3 type MPEGVideo alias gameover", NULL, 0, 0);  
+  	mciSendString("open .\\res\\audio\\AfterTheEnd(credits).mp3 type MPEGVideo alias credits", NULL, 0, 0); 
   	
   	waveOutSetVolume(0,0xFFFFFFFF);
   	
@@ -181,9 +182,9 @@ int main()  {
 	
 	int initPos = 2;
 	
-	//mciSendString("play game repeat", NULL, 0, 0);
-	
 	newGame(floors, nFloor, positions, initPos);
+	
+	changeGameState(1);
 	
 	while(Tecla != ESC) {
    			
@@ -207,7 +208,7 @@ int main()  {
 		
 		if (restart == true) {
 			newGame(floors, nFloor, positions, initPos);
-			gameStateGb = 1;
+			changeGameState(1);
 			restart = false;
 		}
 		
@@ -409,7 +410,7 @@ void playerAttack() {
 void playerCheckLife() {
 	
 	if(player.life <= 0) { //player derrotado. game over
-		gameStateGb = 3;
+		changeGameState(3);
 		return;
 	}
 	
@@ -527,7 +528,7 @@ void enemyAttack(Position *positions) {
 
 void enemyCheckLife() {
 	if (enemy.life <= 0) { //inimigo derrotado. vitoria.
-		gameStateGb = 2;
+		changeGameState(2);
 	}
 }
 
@@ -675,4 +676,33 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	enemy.damaged = false;
 	
 	clearPellets();
+}
+
+void changeGameState(int newState) {
+	
+	if(gameStateGb == 1) {
+		mciSendString("stop game", NULL, 0, 0);
+	} else if(gameStateGb == 2) {
+		mciSendString("stop credits", NULL, 0, 0);
+	} else if(gameStateGb == 3) {
+		mciSendString("stop gameover", NULL, 0, 0);
+	} else if(gameStateGb == 0) {
+		mciSendString("stop menu", NULL, 0, 0);
+	}
+	
+	if(newState == 1) {
+		mciSendString("seek game to start", NULL, 0, 0);
+		mciSendString("play game repeat", NULL, 0, 0);
+	} else if (newState == 2) {
+		mciSendString("seek credits to start", NULL, 0, 0);
+		mciSendString("play credits repeat", NULL, 0, 0);
+	} else if (newState == 3) {
+		mciSendString("seek gameover to start", NULL, 0, 0);
+		mciSendString("play gameover repeat", NULL, 0, 0);
+	} else if (newState == 0) {
+		mciSendString("seek menu to start", NULL, 0, 0);
+		mciSendString("play menu repeat", NULL, 0, 0);
+	}
+	
+	gameStateGb = newState;
 }
