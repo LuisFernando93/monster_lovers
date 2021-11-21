@@ -11,6 +11,9 @@ using namespace std;
 #define ENTER 13
 #define SPRITE_RES 128
 #define GRAVITY 2
+#define MAX_PLAYER_SPRITES 120
+#define MAX_PLAYER_MOVE_INDEX 13
+#define MAX_PLAYER_IDLE_INDEX 8
 
 struct Floor {
 	int x, y;
@@ -31,6 +34,7 @@ struct Player {
 	int timerDamaged;
 	int jumpHeight;
 	double vspd;
+	int idleIndex, moveIndex;
 };
 
 struct Enemy {
@@ -54,6 +58,7 @@ struct Pellet {
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions);
 void render(Wall *walls, int nWall, Floor *floors, int nFloor);
 void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor);
+void renderPlayer();
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerMove();
 void playerJump(Floor *floors, int nFloor);
@@ -81,7 +86,7 @@ int nPelletsGb = 0;
 int gameStateGb = -1; //menu = 0; jogo = 1, creditos = 2, game over = 3
 
 void *imgScene, *imgCredits;
-unsigned char *playerSprite, *playerMask;
+void *playerSprites[MAX_PLAYER_SPRITES], *playerMasks[MAX_PLAYER_SPRITES];
 
 int main()  { 
 
@@ -108,10 +113,40 @@ int main()  {
   	
   	waveOutSetVolume(0,0x44444444);
   	
-  	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
-  	
   	gt1 = GetTickCount();
   	gt2 = gt1 + 1200;
+  	
+	initwindow(1280, 1536);
+  	
+	int WImgSpritesheet, HImgSpritesheet, sizeSprite;
+	
+	WImgSpritesheet = 1280;
+	HImgSpritesheet = 1536;
+	
+	sizeSprite = imagesize(0, 0, SPRITE_RES-1, SPRITE_RES-1);
+	for(int i = 0; i < MAX_PLAYER_SPRITES; i++) {
+		playerSprites[i] = malloc(sizeSprite);
+		playerMasks[i] = malloc(sizeSprite);
+	}
+	
+	readimagefile(".\\res\\image\\spritesheet.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
+	for(int j = 0; j < 12; j++) {
+		for(int i = 0; i < 10; i++) {
+			getimage(SPRITE_RES*i, SPRITE_RES*j, SPRITE_RES*i + SPRITE_RES-1, SPRITE_RES*j + SPRITE_RES-1, playerSprites[i + j*10]);
+		}
+	}
+	
+	
+	readimagefile(".\\res\\image\\mask.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
+	for(int j = 0; j < 12; j++) {
+		for(int i = 0; i < 10; i++) {
+			getimage(SPRITE_RES*i, SPRITE_RES*j, SPRITE_RES*i + SPRITE_RES-1, SPRITE_RES*j + SPRITE_RES-1, playerMasks[i + j*10]);
+		}
+	}
+	
+	closegraph();
+	
+	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
   	
   	int WImgScene, HImgScene, sizeImgScene;
   	
@@ -122,20 +157,6 @@ int main()  {
   	sizeImgScene = imagesize(0, 0, WImgScene - 1, HImgScene - 1);
   	imgScene = malloc(sizeImgScene);
 	getimage(0, 0, WImgScene-1, HImgScene-1, imgScene);
-	
-	int WImgSpritesheet, HImgSpritesheet, sizeSprite;
-	
-	WImgSpritesheet = 1280;
-	HImgSpritesheet = 1536;
-	
-	sizeSprite = imagesize(0, 0, SPRITE_RES-1, SPRITE_RES-1);
-	readimagefile(".\\res\\image\\spritesheet.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
-	playerSprite = (unsigned char *)malloc(sizeSprite);
-	getimage(0, 0, SPRITE_RES-1, SPRITE_RES-1, playerSprite);
-	
-	readimagefile(".\\res\\image\\mask.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
-	playerMask = (unsigned char *)malloc(sizeSprite);
-	getimage(0, 0, SPRITE_RES-1, SPRITE_RES-1, playerMask);
 	
 	int WImgCredits, HImgCredits, sizeImgCredits;
 	
@@ -294,8 +315,11 @@ int main()  {
 	free(pelletsGb);
 	free(imgScene);
 	free(imgCredits);
-	free(playerSprite);
-	free(playerMask);
+	for (int i = 0; i < MAX_PLAYER_SPRITES; i++){
+		free(playerSprites[i]);
+		free(playerMasks[i]);
+	}
+	
 	
 	mciSendString("close menu", NULL, 0, 0);
 	mciSendString("close game", NULL, 0, 0);
@@ -310,7 +334,7 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 		updatePlayer(walls, nWall, floors, nFloor);
 		playerJump(floors, nFloor);
 		freeFall(floors, nFloor);
-		updateEnemy(positions);
+		//updateEnemy(positions);
 		updatePellets();
 	}
 	
@@ -318,22 +342,27 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 
 void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
-	if (gameStateGb == 1) {		
+	if (gameStateGb == 1) {
 		
 		putimage(0, 0, imgScene, COPY_PUT);
+		
+		putimage(0, 0, playerMasks[56 + player.moveIndex], AND_PUT);
+		putimage(0, 0, playerSprites[56 + player.moveIndex], OR_PUT);
 			
 	//	setfillstyle(1, COLOR(255, 255, 0));
 	//	for (int i = 0; i < nWall; i++) bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
 	//	for (int i = 0; i < nFloor; i++) bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
 		
+		//renderEnemy();
+		renderPlayer();
+		
 		if (!enemy.damaged) setfillstyle(1, COLOR(255, 0, 0)); else setfillstyle(1, COLOR(0, 0, 255));
 		bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
 		
-		
-		putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMask, AND_PUT);
-		putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprite, OR_PUT);
 		//if (!player.damaged) setfillstyle(1, COLOR(0, 255, 0)); else setfillstyle(1, COLOR(255, 255, 255));
 		//bar(player.x, player.y, player.x + player.width, player.y + player.height);
+		
+		
 		
 		setfillstyle(1, COLOR(255, 255, 0));
 		if (nPelletsGb > 0) {
@@ -345,7 +374,6 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 		setfillstyle(1, COLOR(0, 0, 0));
 		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
 		putimage(240, 0, imgCredits, COPY_PUT);
-		printf("Vitoria ");
 		
 	} else if (gameStateGb == 3) { //game over
 		setfillstyle(1, COLOR(255, 0, 0));
@@ -360,6 +388,55 @@ void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	playerMove();
 	playerAttack();
 	playerCheckLife();
+}
+
+void renderPlayer() {
+	
+	if(player.move) { // se player esta se movendo
+		if(player.moveRight) { //se player se move para a direita
+			//printf("move direita ");
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[0 + player.moveIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[0 + player.moveIndex], OR_PUT);
+			player.moveIndex++;
+			if(player.moveIndex >= MAX_PLAYER_MOVE_INDEX) {
+				player.moveIndex = 0;
+			}
+			player.move = false;
+			player.moveRight = false;
+			return;
+		} else if(player.moveLeft) { //player se move para a esquerda
+			printf("move esquerda ");
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[56 + player.moveIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[56 + player.moveIndex], OR_PUT);
+			player.moveIndex++;
+			if(player.moveIndex >= MAX_PLAYER_MOVE_INDEX) {
+				player.moveIndex = 0;
+			}
+			player.move = false;
+			player.moveLeft = false;
+			return;
+		}
+	} else { //player esta parado
+		if(player.lookRight) { //se player olha para direita
+			//printf("idle direita ");
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[13 + player.idleIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[13 + player.idleIndex], OR_PUT);
+			player.idleIndex++;
+			if(player.idleIndex >= MAX_PLAYER_IDLE_INDEX) {
+				player.idleIndex = 0;
+			}
+			return;
+		} else { //player olha para a esquerda
+			printf("idle esquerda ");
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[69 + player.idleIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[69 + player.idleIndex], OR_PUT);
+			player.idleIndex++;
+			if(player.idleIndex >= MAX_PLAYER_IDLE_INDEX) {
+				player.idleIndex = 0;
+			}
+			return;
+		}
+	}
 }
 
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
@@ -391,13 +468,10 @@ void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
 void playerMove() {
 	if (player.move) {
 		if (player.moveLeft) {
-			player.x -= player.speed;
-			player.moveLeft = false;
+			player.x -= player.speed;		
 		} else if (player.moveRight) {
 			player.x += player.speed;
-			player.moveRight = false;
 		}
-		player.move = false;
 	}
 }
 
@@ -695,6 +769,8 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	player.damaged = false;
 	player.jumpHeight = 26;
 	player.vspd = 0;
+	player.idleIndex = 0;
+	player.moveIndex = 0;
 	
 	enemy.x = positions[initPos].x;
 	enemy.y = positions[initPos].y;
