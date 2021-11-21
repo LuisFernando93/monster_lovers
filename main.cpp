@@ -14,6 +14,7 @@ using namespace std;
 #define MAX_PLAYER_SPRITES 120
 #define MAX_PLAYER_MOVE_INDEX 13
 #define MAX_PLAYER_IDLE_INDEX 8
+#define MAX_PLAYER_ATTACK_INDEX 13
 
 struct Floor {
 	int x, y;
@@ -29,12 +30,12 @@ struct Player {
 	int x, y;
 	int width, height;
 	int life, power, speed;
-	bool attack, jump, move, moveLeft, moveRight, lookRight;
-	bool damaged;
+	bool attack, attackDamage, jump, move, moveLeft, moveRight, lookRight, falling;
+	bool damaged, dead;
 	int timerDamaged;
 	int jumpHeight;
 	double vspd;
-	int idleIndex, moveIndex;
+	int idleIndex, moveIndex, attackIndex, damagedIndex, deathIndex;
 };
 
 struct Enemy {
@@ -85,7 +86,7 @@ int nPelletsGb = 0;
 
 int gameStateGb = -1; //menu = 0; jogo = 1, creditos = 2, game over = 3
 
-void *imgScene, *imgCredits;
+void *imgScene, *imgCredits, *imgGameover, *imgMenu, *imgControls, *imgOptions;
 void *playerSprites[MAX_PLAYER_SPRITES], *playerMasks[MAX_PLAYER_SPRITES];
 
 int main()  { 
@@ -167,6 +168,46 @@ int main()  {
 	sizeImgCredits = imagesize(0, 0, WImgCredits - 1, HImgCredits - 1);
 	imgCredits = malloc(sizeImgCredits);
 	getimage(0, 0, WImgCredits - 1, HImgCredits - 1, imgCredits);
+	
+	int WImgGameover, HImgGameover, sizeImgGameover;
+	
+	WImgGameover = 800;
+	HImgGameover = 496;
+	
+	readimagefile(".\\res\\image\\gameover.bmp", 0, 0, WImgGameover - 1, HImgGameover - 1);
+	sizeImgGameover = imagesize(0, 0, WImgGameover - 1, HImgGameover - 1);
+	imgGameover = malloc(sizeImgGameover);
+	getimage(0, 0, WImgGameover - 1, HImgGameover - 1, imgGameover);
+	
+	int WImgMenu, HImgMenu, sizeImgMenu;
+	
+	WImgMenu = 800;
+	HImgMenu = 496;
+	
+	readimagefile(".\\res\\image\\menu.bmp", 0, 0, WImgMenu - 1, HImgMenu - 1);
+	sizeImgMenu = imagesize(0, 0, WImgMenu - 1, HImgMenu - 1);
+	imgMenu = malloc(sizeImgMenu);
+	getimage(0, 0, WImgMenu - 1, HImgMenu - 1, imgMenu);
+	
+	int WImgControls, HImgControls, sizeImgControls;
+	
+	WImgControls = 800;
+	HImgControls =496;
+	
+	readimagefile(".\\res\\image\\controles.bmp", 0, 0, WImgControls - 1, HImgControls - 1);
+	sizeImgControls = imagesize(0, 0, WImgControls - 1, HImgControls - 1);
+	imgControls = malloc(sizeImgControls);
+	getimage(0, 0, WImgControls - 1, HImgControls - 1, imgControls);
+	
+	int WImgOptions, HImgOptions, sizeImgOptions;
+	
+	WImgOptions = 800;
+	HImgOptions =496;
+	
+	readimagefile(".\\res\\image\\opcoes.bmp", 0, 0, WImgOptions - 1, HImgOptions - 1);
+	sizeImgOptions = imagesize(0, 0, WImgOptions - 1, HImgOptions - 1);
+	imgOptions = malloc(sizeImgOptions);
+	getimage(0, 0, WImgOptions - 1, HImgOptions - 1, imgOptions);
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -334,7 +375,7 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 		updatePlayer(walls, nWall, floors, nFloor);
 		playerJump(floors, nFloor);
 		freeFall(floors, nFloor);
-		//updateEnemy(positions);
+		updateEnemy(positions);
 		updatePellets();
 	}
 	
@@ -345,9 +386,6 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	if (gameStateGb == 1) {
 		
 		putimage(0, 0, imgScene, COPY_PUT);
-		
-		putimage(0, 0, playerMasks[56 + player.moveIndex], AND_PUT);
-		putimage(0, 0, playerSprites[56 + player.moveIndex], OR_PUT);
 			
 	//	setfillstyle(1, COLOR(255, 255, 0));
 	//	for (int i = 0; i < nWall; i++) bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
@@ -362,8 +400,6 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 		//if (!player.damaged) setfillstyle(1, COLOR(0, 255, 0)); else setfillstyle(1, COLOR(255, 255, 255));
 		//bar(player.x, player.y, player.x + player.width, player.y + player.height);
 		
-		
-		
 		setfillstyle(1, COLOR(255, 255, 0));
 		if (nPelletsGb > 0) {
 			for (int i = 0; i < nPelletsGb; i++) {
@@ -376,9 +412,9 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 		putimage(240, 0, imgCredits, COPY_PUT);
 		
 	} else if (gameStateGb == 3) { //game over
-		setfillstyle(1, COLOR(255, 0, 0));
+		setfillstyle(1, COLOR(0, 0, 0));
 		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
-		printf("Game Over ");
+		putimage(240, 0, imgGameover, COPY_PUT);
 	}
 
 }
@@ -392,9 +428,48 @@ void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor) {
 
 void renderPlayer() {
 	
-	if(player.move) { // se player esta se movendo
+	if (player.dead) { //verifica se player esta morto
+		
+	} else if (player.attack) { //verifica se ataca
+		if (player.lookRight) { //se player olha para direita
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[21 + player.attackIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[21 + player.attackIndex], OR_PUT);
+			player.attackIndex++;
+			if(player.attackIndex >= 8) {
+				player.attackDamage = true;
+			}
+			if(player.attackIndex >= MAX_PLAYER_ATTACK_INDEX) {
+				player.attackIndex = 0;
+				player.attack = false;
+				player.attackDamage = false;
+		 	}
+		 	player.move = false;
+			player.moveRight = false;
+		} else { //player olha para a esquerda
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[77 + player.attackIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[77 + player.attackIndex], OR_PUT);
+			player.attackIndex++;
+			if(player.attackIndex >= 8) {
+				player.attackDamage = true;
+			}
+			if(player.attackIndex >= MAX_PLAYER_ATTACK_INDEX) {
+				player.attackIndex = 0;
+				player.attack = false;
+				player.attackDamage = false;
+		 	}
+		 	player.move = false;
+			player.moveLeft = false;
+		}
+	} else if(player.falling) { // player no ar
+		if (player.lookRight) { //se player olha para direita
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[48], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[48], OR_PUT);
+		} else { //player olha para a esquerda
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[104], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[104], OR_PUT);
+		}
+	} else if(player.move) { // se player esta se movendo
 		if(player.moveRight) { //se player se move para a direita
-			//printf("move direita ");
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[0 + player.moveIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[0 + player.moveIndex], OR_PUT);
 			player.moveIndex++;
@@ -403,9 +478,7 @@ void renderPlayer() {
 			}
 			player.move = false;
 			player.moveRight = false;
-			return;
 		} else if(player.moveLeft) { //player se move para a esquerda
-			printf("move esquerda ");
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[56 + player.moveIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[56 + player.moveIndex], OR_PUT);
 			player.moveIndex++;
@@ -414,27 +487,22 @@ void renderPlayer() {
 			}
 			player.move = false;
 			player.moveLeft = false;
-			return;
 		}
 	} else { //player esta parado
 		if(player.lookRight) { //se player olha para direita
-			//printf("idle direita ");
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[13 + player.idleIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[13 + player.idleIndex], OR_PUT);
 			player.idleIndex++;
 			if(player.idleIndex >= MAX_PLAYER_IDLE_INDEX) {
 				player.idleIndex = 0;
 			}
-			return;
 		} else { //player olha para a esquerda
-			printf("idle esquerda ");
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[69 + player.idleIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[69 + player.idleIndex], OR_PUT);
 			player.idleIndex++;
 			if(player.idleIndex >= MAX_PLAYER_IDLE_INDEX) {
 				player.idleIndex = 0;
 			}
-			return;
 		}
 	}
 }
@@ -482,6 +550,7 @@ void playerJump(Floor *floors, int nFloor) { //pulo do jogador
 			if (!(player.x + player.width <= floors[i].x) && !(player.x >= floors[i].x + floors[i].width)) {
 				if ((player.y+player.height >= floors[i].y) && (player.y+player.height <= floors[i].y + floors[i].height) && player.vspd == 0) {
 					player.vspd = -(player.jumpHeight);
+					player.falling = true;
 				}
 			}
 		}
@@ -490,14 +559,14 @@ void playerJump(Floor *floors, int nFloor) { //pulo do jogador
 }
 
 void playerAttack() {
-	if (player.attack) {
+	if (player.attackDamage) {
 		double distance;
 		if (player.lookRight) {
 			distance = sqrt(pow(player.x + player.width - enemy.x, 2 ) + pow(player.y - enemy.y, 2));
 		} else {
 			distance = sqrt(pow(player.x - enemy.x - enemy.width, 2) + pow(player.y - enemy.y, 2));
 		}
-		//printf("attack distance: %f ", distance);
+		printf("attack distance: %f ", distance);
 		if (distance <= 100 && !enemy.damaged) { //ataque acertou
 			sndPlaySound(".\\res\\audio\\hitEnemy.wav", SND_ASYNC);
 			enemy.life -= player.power;
@@ -505,7 +574,6 @@ void playerAttack() {
 			enemy.timer = 0;
 			printf("hit! enemy: %d ", enemy.life);
 		}
-		player.attack = false;
 	}
 }
 
@@ -529,11 +597,13 @@ void freeFall(Floor *floors, int nFloor) { //queda livre
 	
 	player.vspd += GRAVITY;
 	if (player.vspd > 0) {
+		player.falling = true;
 		for (int i = 0; i <= nFloor - 1; i++) { //verifica colisao com o chao
 			if (!(player.x + player.width <= floors[i].x) && !(player.x >= floors[i].x + floors[i].width)) {
 				if (player.y+player.height+player.vspd >= floors[i].y && player.y + player.height <= floors[i].y) {
 					player.y = floors[i].y - player.height;
 					player.vspd = 0;
+					player.falling = false;
 					return;
 				}
 			}
@@ -761,16 +831,22 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	player.life = 8;
 	player.power = 1;
 	player.attack = false;
+	player.attackDamage = false;
 	player.jump = false;
 	player.move = false;
 	player.moveLeft = false;
 	player.moveRight = false;
 	player.lookRight = true;
+	player.falling = false;
 	player.damaged = false;
+	player.dead = false;
 	player.jumpHeight = 26;
 	player.vspd = 0;
 	player.idleIndex = 0;
 	player.moveIndex = 0;
+	player.attackIndex = 0;
+	player.damagedIndex = 0;
+	player.deathIndex = 0;
 	
 	enemy.x = positions[initPos].x;
 	enemy.y = positions[initPos].y;
