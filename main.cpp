@@ -80,7 +80,8 @@ int nPelletsGb = 0;
 
 int gameStateGb = -1; //menu = 0; jogo = 1, creditos = 2, game over = 3
 
-void *imgScene;
+void *imgScene, *imgCredits;
+unsigned char *playerSprite, *playerMask;
 
 int main()  { 
 
@@ -105,7 +106,7 @@ int main()  {
 	mciSendString("open .\\res\\audio\\DreamsOfVain(gameover).mp3 type MPEGVideo alias gameover", NULL, 0, 0);  
   	mciSendString("open .\\res\\audio\\AfterTheEnd(credits).mp3 type MPEGVideo alias credits", NULL, 0, 0); 
   	
-  	waveOutSetVolume(0,0xFFFFFFFF);
+  	waveOutSetVolume(0,0x44444444);
   	
   	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
   	
@@ -121,6 +122,30 @@ int main()  {
   	sizeImgScene = imagesize(0, 0, WImgScene - 1, HImgScene - 1);
   	imgScene = malloc(sizeImgScene);
 	getimage(0, 0, WImgScene-1, HImgScene-1, imgScene);
+	
+	int WImgSpritesheet, HImgSpritesheet, sizeSprite;
+	
+	WImgSpritesheet = 1280;
+	HImgSpritesheet = 1536;
+	
+	sizeSprite = imagesize(0, 0, SPRITE_RES-1, SPRITE_RES-1);
+	readimagefile(".\\res\\image\\spritesheet.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
+	playerSprite = (unsigned char *)malloc(sizeSprite);
+	getimage(0, 0, SPRITE_RES-1, SPRITE_RES-1, playerSprite);
+	
+	readimagefile(".\\res\\image\\mask.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
+	playerMask = (unsigned char *)malloc(sizeSprite);
+	getimage(0, 0, SPRITE_RES-1, SPRITE_RES-1, playerMask);
+	
+	int WImgCredits, HImgCredits, sizeImgCredits;
+	
+	WImgCredits = 800;
+	HImgCredits = 496;
+	
+	readimagefile(".\\res\\image\\creditos.bmp", 0, 0, WImgCredits - 1, HImgCredits - 1);
+	sizeImgCredits = imagesize(0, 0, WImgCredits - 1, HImgCredits - 1);
+	imgCredits = malloc(sizeImgCredits);
+	getimage(0, 0, WImgCredits - 1, HImgCredits - 1, imgCredits);
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -157,7 +182,7 @@ int main()  {
 	floors[1] = floor2;
 	floors[2] = floor3;
 	
-	player.width = SPRITE_RES;
+	player.width = 60;
 	player.height = SPRITE_RES;
 	
 	enemy.width = SPRITE_RES;
@@ -268,6 +293,9 @@ int main()  {
 	free(positions);
 	free(pelletsGb);
 	free(imgScene);
+	free(imgCredits);
+	free(playerSprite);
+	free(playerMask);
 	
 	mciSendString("close menu", NULL, 0, 0);
 	mciSendString("close game", NULL, 0, 0);
@@ -295,18 +323,17 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 		putimage(0, 0, imgScene, COPY_PUT);
 			
 	//	setfillstyle(1, COLOR(255, 255, 0));
-	//	for (int i = 0; i < nWall; i++) {
-	//		bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
-	//	}
-	//	for (int i = 0; i < nFloor; i++) {
-	//		bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
-	//	}
+	//	for (int i = 0; i < nWall; i++) bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
+	//	for (int i = 0; i < nFloor; i++) bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
 		
 		if (!enemy.damaged) setfillstyle(1, COLOR(255, 0, 0)); else setfillstyle(1, COLOR(0, 0, 255));
 		bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
 		
-		if (!player.damaged) setfillstyle(1, COLOR(0, 255, 0)); else setfillstyle(1, COLOR(255, 255, 255));
-		bar(player.x, player.y, player.x + player.width, player.y + player.height);
+		
+		putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMask, AND_PUT);
+		putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprite, OR_PUT);
+		//if (!player.damaged) setfillstyle(1, COLOR(0, 255, 0)); else setfillstyle(1, COLOR(255, 255, 255));
+		//bar(player.x, player.y, player.x + player.width, player.y + player.height);
 		
 		setfillstyle(1, COLOR(255, 255, 0));
 		if (nPelletsGb > 0) {
@@ -315,8 +342,9 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 			}
 		}
 	} else if (gameStateGb == 2) { //creditos
-		setfillstyle(1, COLOR(0, 255, 0));
+		setfillstyle(1, COLOR(0, 0, 0));
 		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
+		putimage(240, 0, imgCredits, COPY_PUT);
 		printf("Vitoria ");
 		
 	} else if (gameStateGb == 3) { //game over
@@ -558,7 +586,7 @@ void updatePellets() {
 Pellet createPellet(int number, int position) {
 	
 	Pellet pellet;
-	int speedX = 5;
+	int speedX = 8;
 	int speedY1 = 0;
 	int speedY2 = 2;
 	
@@ -665,7 +693,7 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	player.moveRight = false;
 	player.lookRight = true;
 	player.damaged = false;
-	player.jumpHeight = 30;
+	player.jumpHeight = 26;
 	player.vspd = 0;
 	
 	enemy.x = positions[initPos].x;
