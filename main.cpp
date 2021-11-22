@@ -377,7 +377,6 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 	
 	if(gameStateGb == 1) { //jogo
 		updatePlayer(walls, nWall, floors, nFloor);
-		playerJump(floors, nFloor);
 		freeFall(floors, nFloor);
 		updateEnemy(positions);
 		updatePellets();
@@ -427,6 +426,7 @@ void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	playerCollision(walls, nWall, floors, nFloor);
 	if (!player.dead) {
 		playerMove();
+		playerJump(floors, nFloor);
 		playerAttack();
 		playerCheckLife();
 	}
@@ -583,9 +583,10 @@ void playerAttack() {
 		} else {
 			distance = sqrt(pow(player.x - enemy.x - enemy.width, 2) + pow(player.y - enemy.y, 2));
 		}
-		printf("attack distance: %f ", distance);
+		//dprintf("attack distance: %f ", distance);
 		if (distance <= 100 && !enemy.damaged) { //ataque acertou
 			sndPlaySound(".\\res\\audio\\hitEnemy.wav", SND_ASYNC);
+			enemy.life -= player.power;
 			enemy.damaged = true;
 			enemy.timer = 0;
 			printf("hit! enemy: %d ", enemy.life);
@@ -680,7 +681,6 @@ void enemyMove(Position *positions) {//movimento do inimigo
 	while (nextPos == enemyPos) { //escolhe uma nova posicao aleatoria, diferente da atual
 		nextPos = rand()%4;
 	}
-
 	
 	//reposiciona o inimigo
 	enemy.x = positions[nextPos].x;
@@ -691,35 +691,41 @@ void enemyAttack(Position *positions) {
 	
 	int enemyPos;
 	Pellet pellet1, pellet2;
+
 	
 	//verifica a posicao atual do inimigo
 	if (enemy.x == positions[0].x && enemy.y == positions[0].y) { //posicao 0
 
 		pellet1 = createPellet(1, 0);
 		pellet2 = createPellet(2, 0);
+		addPellet(pellet1);
+		addPellet(pellet2);
 		
 	} else if (enemy.x == positions[1].x && enemy.y == positions[1].y) { //posicao 1
 
 		pellet1 = createPellet(1, 1);
 		pellet2 = createPellet(2, 1);
+		addPellet(pellet1);
+		addPellet(pellet2);
 		
 	} else if (enemy.x == positions[2].x && enemy.y == positions[2].y) { //posicao 2
-
+		
 		pellet1 = createPellet(1, 2);
 		pellet2 = createPellet(2, 2);
-		
+		addPellet(pellet1);
+		addPellet(pellet2);
 		
 	} else if (enemy.x == positions[3].x && enemy.y == positions[3].y) { //posicao 3
 
 		pellet1 = createPellet(1, 3);
 		pellet2 = createPellet(2, 3);
+		addPellet(pellet1);
+		addPellet(pellet2);
 		
 	} else {
 		return;
 	}
 	
-	addPellet(pellet1);
-	addPellet(pellet2);
 	
 }
 
@@ -737,7 +743,10 @@ void updatePellets() {
 			
 			if (pelletsGb[i].x <= (0*SCALE) || pelletsGb[i].x >= (WIDTH*SCALE) || pelletsGb[i].y <= (0*SCALE) || pelletsGb[i].y >= (HEIGHT*SCALE)) {
 				removePellet(i);
-			}
+				if(nPelletsGb == 0) {
+					return;
+				}
+			}	
 			
 			if (pelletsGb[i].x >= player.x && pelletsGb[i].x - 1 <= player.x + player.width && pelletsGb[i].y >= player.y && pelletsGb[i].y - 1  <= player.y + player.height) { //acerta player
 				if (!player.invincible) {
@@ -749,7 +758,9 @@ void updatePellets() {
 					player.invincible = true;
 					printf("Damaged player: %d ", player.life);
 				}
-			}				
+			}	
+			
+					
 		}
 	}
 }
@@ -855,7 +866,7 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	player.x = (WIDTH/2 - 180 )*SCALE;
 	player.y = floors[1].y - player.height;
 	player.speed = 8;
-	player.life = 1;
+	player.life = 8;
 	player.power = 1;
 	player.attack = false;
 	player.attackDamage = false;
