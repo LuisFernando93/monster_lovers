@@ -16,7 +16,7 @@ using namespace std;
 #define MAX_PLAYER_IDLE_INDEX 8
 #define MAX_PLAYER_ATTACK_INDEX 13
 #define MAX_PLAYER_DAMAGED_INDEX 6
-#define MAX_PLAYER_DEATH_INDEX 13
+#define MAX_PLAYER_DEATH_INDEX 14
 
 struct Floor {
 	int x, y;
@@ -33,7 +33,7 @@ struct Player {
 	int width, height;
 	int life, power, speed;
 	bool attack, attackDamage, jump, move, moveLeft, moveRight, lookRight, falling;
-	bool damaged, dead;
+	bool damaged, invincible, dead;
 	int timerDamaged;
 	int jumpHeight;
 	double vspd;
@@ -64,8 +64,10 @@ void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor);
 void renderPlayer();
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor);
 void playerMove();
+void resetPlayerMove();
 void playerJump(Floor *floors, int nFloor);
 void playerAttack();
+void cancelPlayerAttack();
 void playerCheckLife();
 void freeFall(Floor *floors, int nFloor);
 void updateEnemy(Position *positions);
@@ -194,7 +196,7 @@ int main()  {
 	int WImgControls, HImgControls, sizeImgControls;
 	
 	WImgControls = 800;
-	HImgControls =496;
+	HImgControls = 496;
 	
 	readimagefile(".\\res\\image\\controles.bmp", 0, 0, WImgControls - 1, HImgControls - 1);
 	sizeImgControls = imagesize(0, 0, WImgControls - 1, HImgControls - 1);
@@ -204,7 +206,7 @@ int main()  {
 	int WImgOptions, HImgOptions, sizeImgOptions;
 	
 	WImgOptions = 800;
-	HImgOptions =496;
+	HImgOptions = 496;
 	
 	readimagefile(".\\res\\image\\opcoes.bmp", 0, 0, WImgOptions - 1, HImgOptions - 1);
 	sizeImgOptions = imagesize(0, 0, WImgOptions - 1, HImgOptions - 1);
@@ -423,15 +425,43 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 void updatePlayer(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
 	playerCollision(walls, nWall, floors, nFloor);
-	playerMove();
-	playerAttack();
-	playerCheckLife();
+	if (!player.dead) {
+		playerMove();
+		playerAttack();
+		playerCheckLife();
+	}
+	
+	
 }
 
 void renderPlayer() {
 	
 	if (player.dead) { //verifica se player esta morto
-		
+		if (player.lookRight) { //se player olha para direita
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[34 + player.deathIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[34 + player.deathIndex], OR_PUT);
+		} else { //player olha para a esquerda
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[90 + player.deathIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[90 + player.deathIndex], OR_PUT);
+		}
+		player.deathIndex++;
+		if (player.deathIndex >= MAX_PLAYER_DEATH_INDEX) {
+			delay(20);
+			changeGameState(3);
+		}	
+	} else if (player.damaged) {
+		if (player.lookRight) { //se player olha para direita
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[50 + player.damagedIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[50 + player.damagedIndex], OR_PUT);
+		} else { //player olha para a esquerda
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[108 + player.damagedIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[108 + player.damagedIndex], OR_PUT);
+		}
+		player.damagedIndex++;
+		if (player.damagedIndex >= MAX_PLAYER_DAMAGED_INDEX) {
+			player.damagedIndex = 0;
+			player.damaged = false;
+		}
 	} else if (player.attack) { //verifica se ataca
 		if (player.lookRight) { //se player olha para direita
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[21 + player.attackIndex], AND_PUT);
@@ -485,10 +515,7 @@ void renderPlayer() {
 			player.idleIndex = 0;
 		}
 	}
-	
-	player.moveRight = false;
-	player.move = false;
-	player.moveLeft = false;
+	resetPlayerMove();
 }
 
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
@@ -527,6 +554,12 @@ void playerMove() {
 	}
 }
 
+void resetPlayerMove() {
+	player.moveRight = false;
+	player.move = false;
+	player.moveLeft = false;
+}
+
 void playerJump(Floor *floors, int nFloor) { //pulo do jogador
 	
 	if (player.jump) {
@@ -553,7 +586,6 @@ void playerAttack() {
 		printf("attack distance: %f ", distance);
 		if (distance <= 100 && !enemy.damaged) { //ataque acertou
 			sndPlaySound(".\\res\\audio\\hitEnemy.wav", SND_ASYNC);
-			enemy.life -= player.power;
 			enemy.damaged = true;
 			enemy.timer = 0;
 			printf("hit! enemy: %d ", enemy.life);
@@ -561,18 +593,24 @@ void playerAttack() {
 	}
 }
 
+void cancelPlayerAttack() {
+	player.attack = false;
+	player.attackDamage = false;
+	player.attackIndex = 0;
+}
+
 void playerCheckLife() {
 	
 	if(player.life <= 0) { //player derrotado. game over
-		changeGameState(3);
+		player.dead = true;
 		return;
 	}
 	
-	if(player.damaged) { //player machucado. frames de invencibilidade
+	if(player.invincible) { //player machucado. frames de invencibilidade
 		player.timerDamaged++;
-		if(player.timerDamaged >= 40) {
+		if(player.timerDamaged >= 30) {
 			player.timerDamaged = 0;
-			player.damaged = false;
+			player.invincible = false;
 		}
 	}
 }
@@ -597,24 +635,27 @@ void freeFall(Floor *floors, int nFloor) { //queda livre
 }
 
 void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer suas acoes. 
+	
 	enemyCheckLife();
-	enemy.timer++;
-	if (!enemy.damaged) {
-		if (enemy.timer == 30) {
-			enemyAttack(positions);
-		} else if (enemy.timer == 90) {
-			enemyAttack(positions);
-		} else if (enemy.timer == 150) {
-			enemyAttack(positions);
-		} else if (enemy.timer == 240) {
-			enemyMove(positions);
-			enemy.timer = 0;
-		}
-	} else {
-		if (enemy.timer == 40) {
-			enemyMove(positions);
-			enemy.damaged = false;
-			enemy.timer = 0;
+	if (!player.dead){
+			enemy.timer++;
+		if (!enemy.damaged) {
+			if (enemy.timer == 30) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 90) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 150) {
+				enemyAttack(positions);
+			} else if (enemy.timer == 240) {
+				enemyMove(positions);
+				enemy.timer = 0;
+			}
+		} else {
+			if (enemy.timer == 40) {
+				enemyMove(positions);
+				enemy.damaged = false;
+				enemy.timer = 0;
+			}
 		}
 	}
 	
@@ -699,11 +740,13 @@ void updatePellets() {
 			}
 			
 			if (pelletsGb[i].x >= player.x && pelletsGb[i].x - 1 <= player.x + player.width && pelletsGb[i].y >= player.y && pelletsGb[i].y - 1  <= player.y + player.height) { //acerta player
-				if (!player.damaged) {
+				if (!player.invincible) {
 					removePellet(i);
-					sndPlaySound(".\\res\\audio\\hitPlayer.wav", SND_ASYNC);
+					cancelPlayerAttack();
 					player.life -= enemy.power;
+					if (player.life > 0) sndPlaySound(".\\res\\audio\\hitPlayer.wav", SND_ASYNC); else sndPlaySound(".\\res\\audio\\deathPlayer.wav", SND_ASYNC);
 					player.damaged = true;
+					player.invincible = true;
 					printf("Damaged player: %d ", player.life);
 				}
 			}				
@@ -812,7 +855,7 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	player.x = (WIDTH/2 - 180 )*SCALE;
 	player.y = floors[1].y - player.height;
 	player.speed = 8;
-	player.life = 8;
+	player.life = 1;
 	player.power = 1;
 	player.attack = false;
 	player.attackDamage = false;
@@ -823,6 +866,7 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	player.lookRight = true;
 	player.falling = false;
 	player.damaged = false;
+	player.invincible = false;
 	player.dead = false;
 	player.jumpHeight = 26;
 	player.vspd = 0;
