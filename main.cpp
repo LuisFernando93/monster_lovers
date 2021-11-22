@@ -15,6 +15,8 @@ using namespace std;
 #define MAX_PLAYER_MOVE_INDEX 13
 #define MAX_PLAYER_IDLE_INDEX 8
 #define MAX_PLAYER_ATTACK_INDEX 13
+#define MAX_PLAYER_DAMAGED_INDEX 6
+#define MAX_PLAYER_DEATH_INDEX 13
 
 struct Floor {
 	int x, y;
@@ -434,31 +436,18 @@ void renderPlayer() {
 		if (player.lookRight) { //se player olha para direita
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[21 + player.attackIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[21 + player.attackIndex], OR_PUT);
-			player.attackIndex++;
-			if(player.attackIndex >= 8) {
-				player.attackDamage = true;
-			}
-			if(player.attackIndex >= MAX_PLAYER_ATTACK_INDEX) {
-				player.attackIndex = 0;
-				player.attack = false;
-				player.attackDamage = false;
-		 	}
-		 	player.move = false;
-			player.moveRight = false;
 		} else { //player olha para a esquerda
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[77 + player.attackIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[77 + player.attackIndex], OR_PUT);
-			player.attackIndex++;
+		}
+		player.attackIndex++;
 			if(player.attackIndex >= 8) {
 				player.attackDamage = true;
 			}
-			if(player.attackIndex >= MAX_PLAYER_ATTACK_INDEX) {
-				player.attackIndex = 0;
-				player.attack = false;
-				player.attackDamage = false;
-		 	}
-		 	player.move = false;
-			player.moveLeft = false;
+		if(player.attackIndex >= MAX_PLAYER_ATTACK_INDEX) {
+			player.attackIndex = 0;
+			player.attack = false;
+			player.attackDamage = false;
 		}
 	} else if(player.falling) { // player no ar
 		if (player.lookRight) { //se player olha para direita
@@ -472,39 +461,34 @@ void renderPlayer() {
 		if(player.moveRight) { //se player se move para a direita
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[0 + player.moveIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[0 + player.moveIndex], OR_PUT);
-			player.moveIndex++;
-			if(player.moveIndex >= MAX_PLAYER_MOVE_INDEX) {
-				player.moveIndex = 0;
-			}
-			player.move = false;
-			player.moveRight = false;
+
 		} else if(player.moveLeft) { //player se move para a esquerda
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[56 + player.moveIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[56 + player.moveIndex], OR_PUT);
-			player.moveIndex++;
-			if(player.moveIndex >= MAX_PLAYER_MOVE_INDEX) {
-				player.moveIndex = 0;
-			}
-			player.move = false;
-			player.moveLeft = false;
+			
 		}
+		player.moveIndex++;
+		if(player.moveIndex >= MAX_PLAYER_MOVE_INDEX) {
+			player.moveIndex = 0;
+		}
+		
 	} else { //player esta parado
 		if(player.lookRight) { //se player olha para direita
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[13 + player.idleIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[13 + player.idleIndex], OR_PUT);
-			player.idleIndex++;
-			if(player.idleIndex >= MAX_PLAYER_IDLE_INDEX) {
-				player.idleIndex = 0;
-			}
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[13 + player.idleIndex], OR_PUT);	
 		} else { //player olha para a esquerda
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[69 + player.idleIndex], AND_PUT);
 			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[69 + player.idleIndex], OR_PUT);
-			player.idleIndex++;
-			if(player.idleIndex >= MAX_PLAYER_IDLE_INDEX) {
-				player.idleIndex = 0;
-			}
+		}
+		player.idleIndex++;
+		if(player.idleIndex >= MAX_PLAYER_IDLE_INDEX) {
+			player.idleIndex = 0;
 		}
 	}
+	
+	player.moveRight = false;
+	player.move = false;
+	player.moveLeft = false;
 }
 
 void playerCollision(Wall *walls, int nWall, Floor *floors, int nFloor) {
