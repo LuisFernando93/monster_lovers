@@ -11,12 +11,17 @@ using namespace std;
 #define ENTER 13
 #define SPRITE_RES 128
 #define GRAVITY 2
-#define MAX_PLAYER_SPRITES 120
+#define MAX_SPRITES 220
 #define MAX_PLAYER_MOVE_INDEX 13
 #define MAX_PLAYER_IDLE_INDEX 8
 #define MAX_PLAYER_ATTACK_INDEX 13
-#define MAX_PLAYER_DAMAGED_INDEX 6
+#define MAX_PLAYER_DAMAGED_INDEX 5
 #define MAX_PLAYER_DEATH_INDEX 14
+#define MAX_ENEMY_TELEPORT_INDEX 11
+#define MAX_ENEMY_IDLE_INDEX 5
+#define MAX_ENEMY_ATTACK_INDEX 11
+#define MAX_ENEMY_DAMAGED_INDEX 8
+#define MAX_ENEMY_DEATH_INDEX 14
 
 struct Floor {
 	int x, y;
@@ -45,7 +50,9 @@ struct Enemy {
 	int life, power;
 	int width, height;
 	int timer;
-	bool damaged;
+	bool attack, teleport, move, lookRight;
+	bool damaged, invincible, dead;
+	int idleIndex, teleportIndex, attackIndex, damagedIndex, deathIndex;
 };
 
 struct Position {
@@ -71,6 +78,7 @@ void cancelPlayerAttack();
 void playerCheckLife();
 void freeFall(Floor *floors, int nFloor);
 void updateEnemy(Position *positions);
+void renderEnemy();
 void enemyMove(Position *positions);
 void enemyAttack(Position *positions);
 void enemyCheckLife();
@@ -91,7 +99,7 @@ int nPelletsGb = 0;
 int gameStateGb = -1; //menu = 0; jogo = 1, creditos = 2, game over = 3
 
 void *imgScene, *imgCredits, *imgGameover, *imgMenu, *imgControls, *imgOptions;
-void *playerSprites[MAX_PLAYER_SPRITES], *playerMasks[MAX_PLAYER_SPRITES];
+void *sprites[MAX_SPRITES], *spriteMasks[MAX_SPRITES];
 
 int main()  { 
 
@@ -121,31 +129,31 @@ int main()  {
   	gt1 = GetTickCount();
   	gt2 = gt1 + 1200;
   	
-	initwindow(1280, 1536);
+	initwindow(1280, 3072);
   	
 	int WImgSpritesheet, HImgSpritesheet, sizeSprite;
 	
 	WImgSpritesheet = 1280;
-	HImgSpritesheet = 1536;
+	HImgSpritesheet = 3072;
 	
 	sizeSprite = imagesize(0, 0, SPRITE_RES-1, SPRITE_RES-1);
-	for(int i = 0; i < MAX_PLAYER_SPRITES; i++) {
-		playerSprites[i] = malloc(sizeSprite);
-		playerMasks[i] = malloc(sizeSprite);
+	for(int i = 0; i < MAX_SPRITES; i++) {
+		sprites[i] = malloc(sizeSprite);
+		spriteMasks[i] = malloc(sizeSprite);
 	}
 	
 	readimagefile(".\\res\\image\\spritesheet.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
-	for(int j = 0; j < 12; j++) {
+	for(int j = 0; j < 22; j++) {
 		for(int i = 0; i < 10; i++) {
-			getimage(SPRITE_RES*i, SPRITE_RES*j, SPRITE_RES*i + SPRITE_RES-1, SPRITE_RES*j + SPRITE_RES-1, playerSprites[i + j*10]);
+			getimage(SPRITE_RES*i, SPRITE_RES*j, SPRITE_RES*i + SPRITE_RES-1, SPRITE_RES*j + SPRITE_RES-1, sprites[i + j*10]);
 		}
 	}
 	
 	
 	readimagefile(".\\res\\image\\mask.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
-	for(int j = 0; j < 12; j++) {
+	for(int j = 0; j < 22; j++) {
 		for(int i = 0; i < 10; i++) {
-			getimage(SPRITE_RES*i, SPRITE_RES*j, SPRITE_RES*i + SPRITE_RES-1, SPRITE_RES*j + SPRITE_RES-1, playerMasks[i + j*10]);
+			getimage(SPRITE_RES*i, SPRITE_RES*j, SPRITE_RES*i + SPRITE_RES-1, SPRITE_RES*j + SPRITE_RES-1, spriteMasks[i + j*10]);
 		}
 	}
 	
@@ -251,19 +259,19 @@ int main()  {
 	player.width = 60;
 	player.height = SPRITE_RES;
 	
-	enemy.width = SPRITE_RES;
+	enemy.width = 60;
 	enemy.height = SPRITE_RES;
 		
-	pos0.x = 30*SCALE;
+	pos0.x = 45*SCALE;
 	pos0.y = floor1.y - enemy.height;
 	
-	pos1.x = 50*SCALE;
+	pos1.x = 54*SCALE;
 	pos1.y = floor2.y - enemy.height;
 	
-	pos2.x = (WIDTH - 50)*SCALE - enemy.width;
+	pos2.x = (WIDTH - 54)*SCALE - enemy.width;
 	pos2.y = floor3.y - enemy.height;
 	
-	pos3.x = (WIDTH - 30)*SCALE - enemy.width;
+	pos3.x = (WIDTH - 45)*SCALE - enemy.width;
 	pos3.y = floor1.y - enemy.height;
 	
 	positions[0] = pos0;
@@ -360,9 +368,9 @@ int main()  {
 	free(pelletsGb);
 	free(imgScene);
 	free(imgCredits);
-	for (int i = 0; i < MAX_PLAYER_SPRITES; i++){
-		free(playerSprites[i]);
-		free(playerMasks[i]);
+	for (int i = 0; i < MAX_SPRITES; i++){
+		free(sprites[i]);
+		free(spriteMasks[i]);
 	}
 	
 	
@@ -394,11 +402,11 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	//	for (int i = 0; i < nWall; i++) bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
 	//	for (int i = 0; i < nFloor; i++) bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
 		
-		//renderEnemy();
-		renderPlayer();
-		
 		if (!enemy.damaged) setfillstyle(1, COLOR(255, 0, 0)); else setfillstyle(1, COLOR(0, 0, 255));
 		bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
+		
+		renderEnemy();
+		renderPlayer();
 		
 		//if (!player.damaged) setfillstyle(1, COLOR(0, 255, 0)); else setfillstyle(1, COLOR(255, 255, 255));
 		//bar(player.x, player.y, player.x + player.width, player.y + player.height);
@@ -438,11 +446,11 @@ void renderPlayer() {
 	
 	if (player.dead) { //verifica se player esta morto
 		if (player.lookRight) { //se player olha para direita
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[34 + player.deathIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[34 + player.deathIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[34 + player.deathIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[34 + player.deathIndex], OR_PUT);
 		} else { //player olha para a esquerda
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[90 + player.deathIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[90 + player.deathIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[90 + player.deathIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[90 + player.deathIndex], OR_PUT);
 		}
 		player.deathIndex++;
 		if (player.deathIndex >= MAX_PLAYER_DEATH_INDEX) {
@@ -451,11 +459,11 @@ void renderPlayer() {
 		}	
 	} else if (player.damaged) {
 		if (player.lookRight) { //se player olha para direita
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[50 + player.damagedIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[50 + player.damagedIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[50 + player.damagedIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[50 + player.damagedIndex], OR_PUT);
 		} else { //player olha para a esquerda
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[108 + player.damagedIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[108 + player.damagedIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[107 + player.damagedIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[107 + player.damagedIndex], OR_PUT);
 		}
 		player.damagedIndex++;
 		if (player.damagedIndex >= MAX_PLAYER_DAMAGED_INDEX) {
@@ -464,11 +472,11 @@ void renderPlayer() {
 		}
 	} else if (player.attack) { //verifica se ataca
 		if (player.lookRight) { //se player olha para direita
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[21 + player.attackIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[21 + player.attackIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[21 + player.attackIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[21 + player.attackIndex], OR_PUT);
 		} else { //player olha para a esquerda
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[77 + player.attackIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[77 + player.attackIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[77 + player.attackIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[77 + player.attackIndex], OR_PUT);
 		}
 		player.attackIndex++;
 			if(player.attackIndex >= 8) {
@@ -481,20 +489,20 @@ void renderPlayer() {
 		}
 	} else if(player.falling) { // player no ar
 		if (player.lookRight) { //se player olha para direita
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[48], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[48], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[48], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[48], OR_PUT);
 		} else { //player olha para a esquerda
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[104], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[104], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[104], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[104], OR_PUT);
 		}
 	} else if(player.move) { // se player esta se movendo
 		if(player.moveRight) { //se player se move para a direita
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[0 + player.moveIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[0 + player.moveIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[0 + player.moveIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[0 + player.moveIndex], OR_PUT);
 
 		} else if(player.moveLeft) { //player se move para a esquerda
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[56 + player.moveIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[56 + player.moveIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[56 + player.moveIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[56 + player.moveIndex], OR_PUT);
 			
 		}
 		player.moveIndex++;
@@ -504,11 +512,11 @@ void renderPlayer() {
 		
 	} else { //player esta parado
 		if(player.lookRight) { //se player olha para direita
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[13 + player.idleIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[13 + player.idleIndex], OR_PUT);	
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[13 + player.idleIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[13 + player.idleIndex], OR_PUT);	
 		} else { //player olha para a esquerda
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerMasks[69 + player.idleIndex], AND_PUT);
-			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, playerSprites[69 + player.idleIndex], OR_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, spriteMasks[69 + player.idleIndex], AND_PUT);
+			putimage(player.x - (SPRITE_RES-player.width)/2, player.y, sprites[69 + player.idleIndex], OR_PUT);
 		}
 		player.idleIndex++;
 		if(player.idleIndex >= MAX_PLAYER_IDLE_INDEX) {
@@ -662,6 +670,43 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 	
 }
 
+void renderEnemy() {
+	if (enemy.dead) {
+		if(enemy.lookRight) {
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[142 + enemy.deathIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[142 + enemy.deathIndex], OR_PUT);
+		} else {
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[181 + enemy.deathIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[181 + enemy.deathIndex], OR_PUT);
+		}
+		enemy.deathIndex++;
+		if (enemy.deathIndex >= MAX_ENEMY_DEATH_INDEX) {
+			delay(20);
+			changeGameState(2);
+		}
+	} else if(enemy.damaged) {
+		if(enemy.lookRight) {
+			
+		} else {
+			
+		}
+	} else if(enemy.attack) {
+		if(enemy.lookRight) {
+			
+		} else {
+			
+		}
+	} else if(enemy.teleport) {
+		if(enemy.lookRight) {
+			
+		} else {
+			
+		}
+	} else {
+		
+	}
+}
+
 void enemyMove(Position *positions) {//movimento do inimigo
 	
 	int enemyPos, nextPos;
@@ -685,6 +730,8 @@ void enemyMove(Position *positions) {//movimento do inimigo
 	//reposiciona o inimigo
 	enemy.x = positions[nextPos].x;
 	enemy.y = positions[nextPos].y;
+	
+	if (nextPos == 0 || nextPos == 1) enemy.lookRight = true; else if (nextPos == 2 || nextPos == 3) enemy.lookRight = false;
 }
 
 void enemyAttack(Position *positions) {
@@ -731,7 +778,8 @@ void enemyAttack(Position *positions) {
 
 void enemyCheckLife() {
 	if (enemy.life <= 0) { //inimigo derrotado. vitoria.
-		changeGameState(2);
+		enemy.dead = true;
+		sndPlaySound(".\\res\\audio\\deathEnemy.wav", SND_ASYNC);
 	}
 }
 
@@ -889,10 +937,21 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	
 	enemy.x = positions[initPos].x;
 	enemy.y = positions[initPos].y;
-	enemy.life = 8;
+	enemy.life = 1;
 	enemy.power = 1;
 	enemy.timer = 0;
+	enemy.attack = false;
+	enemy.move = false;
+	enemy.teleport = false;
+	enemy.lookRight = false;
 	enemy.damaged = false;
+	enemy.invincible = false;
+	enemy.dead = false;
+	enemy.idleIndex = 0;
+	enemy.teleportIndex = 0;
+	enemy.attackIndex = 0;
+	enemy.damagedIndex = 0;
+	enemy.deathIndex = 0;
 	
 	clearPellets();
 }
