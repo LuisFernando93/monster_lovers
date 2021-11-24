@@ -97,7 +97,12 @@ Enemy enemy;
 Pellet *pelletsGb;
 int nPelletsGb = 0;
 
-int gameStateGb = -1; //menu = 0; jogo = 1, creditos = 2, game over = 3
+bool clickGb = false;
+bool closeGb = false;
+POINT pointGb;
+HWND screen;
+
+int gameStateGb = 0; //menu = 0; jogo = 1, creditos = 2, game over = 3, opcoes = -1
 
 void *imgScene, *imgCredits, *imgGameover, *imgMenu, *imgControls, *imgOptions;
 void *sprites[MAX_SPRITES], *spriteMasks[MAX_SPRITES];
@@ -120,9 +125,10 @@ int main()  {
   	int fps = 60;
   	
   	bool restart = false;
+  	bool start = false;
   	
   	mciSendString("open .\\res\\audio\\Uberpunch(game).mp3 type MPEGVideo alias game", NULL, 0, 0); 
-  	mciSendString("open .\\res\\audio\\OneDestination-TwoJourneys(menu).mp3 type MPEGVideo alias menu", NULL, 0, 0);  
+  	mciSendString("open .\\res\\audio\\menuMusic.mp3 type MPEGVideo alias menu", NULL, 0, 0);  
 	mciSendString("open .\\res\\audio\\DreamsOfVain(gameover).mp3 type MPEGVideo alias gameover", NULL, 0, 0);  
   	mciSendString("open .\\res\\audio\\AfterTheEnd(credits).mp3 type MPEGVideo alias credits", NULL, 0, 0); 
   	
@@ -162,6 +168,8 @@ int main()  {
 	closegraph();
 	
 	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
+	
+	screen = GetForegroundWindow();
   	
   	int WImgScene, HImgScene, sizeImgScene;
   	
@@ -271,9 +279,9 @@ int main()  {
 	wall1.width = 35*SCALE;
 	wall1.height = HEIGHT*SCALE;
 	
-	wall2.x = WIDTH*SCALE - 20;
+	wall2.x = WIDTH*SCALE - 35*SCALE;
 	wall2.y = 0;
-	wall2.width = 20;
+	wall2.width = 35*SCALE;
 	wall2.height = HEIGHT*SCALE;
 	
 	walls[0] = wall1;
@@ -307,9 +315,9 @@ int main()  {
 	
 	int initPos = 2;
 	
-	newGame(floors, nFloor, positions, initPos);
+	changeGameState(0);
 	
-	changeGameState(1);
+	mciSendString("play menu repeat", NULL, 0, 0);
 	
 	while(Tecla != ESC) {
    			
@@ -331,13 +339,35 @@ int main()  {
 		
 		fflush(stdin);
 		
-		if (restart == true) {
+		if (start) {
 			newGame(floors, nFloor, positions, initPos);
 			changeGameState(1);
+			start = false;
+		}
+		
+		if (restart) {
+			changeGameState(0);
 			restart = false;
 		}
 		
-		if(gameStateGb == 1) { //jogo
+		if (closeGb) {
+			Tecla = ESC;
+		}
+		
+		if (gameStateGb == 0 || gameStateGb == -1) {
+			
+			if(GetKeyState(VK_LBUTTON)&0x80) { //esquerda
+				if (GetCursorPos(&pointGb)) {
+					if (ScreenToClient(screen, &pointGb)){
+						int x = pointGb.x;
+						int y = pointGb.y;
+						//printf("x = %d y = %d ", x, y);
+						clickGb = true;
+					}
+				}
+			} 
+		
+		} else if(gameStateGb == 1) { //jogo
 			
 			if(GetKeyState('A')&0x80) { //esquerda
 				player.move = true;
@@ -381,6 +411,11 @@ int main()  {
 				restart = true;
 			}
 
+		} else if(gameStateGb == 4) { //game over
+		
+			if(GetKeyState(ENTER)&0x80) { //restart
+				start = true;
+			}
 		}
 			
 		if (kbhit()) {
@@ -412,35 +447,70 @@ int main()  {
 
 void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positions) {
 	
-	if(gameStateGb == 1) { //jogo
+	if (gameStateGb == 0) {
+		if (clickGb) {
+			if (pointGb.x >= 625 && pointGb.x <= 705 && pointGb.y >= 175 && pointGb.y <= 205) {
+				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
+				gameStateGb = 4;
+			} else if (pointGb.x >= 580 && pointGb.x <= 750 && pointGb.y >= 235 && pointGb.y <= 275) {
+				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
+				gameStateGb = -1;
+			} else if (pointGb.x >= 610 && pointGb.x <= 720 && pointGb.y >= 300 && pointGb.y <= 330) {
+				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
+				changeGameState(2);
+			} else if (pointGb.x >= 635 && pointGb.x <= 700 && pointGb.y >= 360 && pointGb.y <= 390) {
+				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
+				closeGb = true;
+			}
+			clickGb = false;
+		}
+	}else if(gameStateGb == 1) { //jogo
 		updatePlayer(walls, nWall, floors, nFloor);
 		freeFall(floors, nFloor);
 		updateEnemy(positions);
 		updatePellets();
+	} else if (gameStateGb == -1) {
+		if (clickGb) {
+			if (pointGb.x >= 355 && pointGb.x <= 460 && pointGb.y >= 180 && pointGb.y <= 275) {
+				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
+				waveOutSetVolume(0,0x44444444);
+			} else if (pointGb.x >= 775 && pointGb.x <= 885 && pointGb.y >= 180 && pointGb.y <= 275) {
+				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
+				waveOutSetVolume(0,0x00000000);
+			} else if (pointGb.x >= 580 && pointGb.x <= 702 && pointGb.y >= 365 && pointGb.y <= 410) {
+				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
+				gameStateGb = 0;
+			}
+		}
 	}
-	
 }
 
 void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	
-	if (gameStateGb == 1) {
+	if (gameStateGb == 0) { //menu
+	
+		setfillstyle(1, COLOR(0, 0, 0));
+		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
+		putimage(240, 0, imgMenu, COPY_PUT);
+		
+	} else if (gameStateGb == 1) {
 		
 		putimage(0, 0, imgScene, COPY_PUT);
 		
 		ui();
 			
-	//	setfillstyle(1, COLOR(255, 255, 0));
-	//	for (int i = 0; i < nWall; i++) bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
-	//	for (int i = 0; i < nFloor; i++) bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
+		//setfillstyle(1, COLOR(255, 255, 0));
+		//for (int i = 0; i < nWall; i++) bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
+		//for (int i = 0; i < nFloor; i++) bar(floors[i].x, floors[i].y, floors[i].x + floors[i].width, floors[i].y + floors[i].height);
 		
-		if (!enemy.damaged) setfillstyle(1, COLOR(255, 0, 0)); else setfillstyle(1, COLOR(0, 0, 255));
-		bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
-		
-		renderEnemy();
-		renderPlayer();
+		//if (!enemy.damaged) setfillstyle(1, COLOR(255, 0, 0)); else setfillstyle(1, COLOR(0, 0, 255));
+		//bar(enemy.x, enemy.y, enemy.x + enemy.width, enemy.y + enemy.height);
 		
 		//if (!player.damaged) setfillstyle(1, COLOR(0, 255, 0)); else setfillstyle(1, COLOR(255, 255, 255));
 		//bar(player.x, player.y, player.x + player.width, player.y + player.height);
+		
+		renderEnemy();
+		renderPlayer();
 		
 		setfillstyle(1, COLOR(255, 255, 0));
 		if (nPelletsGb > 0) {
@@ -457,6 +527,14 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 		setfillstyle(1, COLOR(0, 0, 0));
 		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
 		putimage(240, 0, imgGameover, COPY_PUT);
+	} else if (gameStateGb == 4) { //controles
+		setfillstyle(1, COLOR(0, 0, 0));
+		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
+		putimage(240, 0, imgControls, COPY_PUT);
+	} else if (gameStateGb == -1) { //opcoes
+		setfillstyle(1, COLOR(0, 0, 0));
+		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
+		putimage(240, 0, imgOptions, COPY_PUT);
 	}
 
 }
@@ -623,12 +701,12 @@ void playerAttack() {
 			distance = sqrt(pow(player.x - enemy.x - enemy.width, 2) + pow(player.y - enemy.y, 2));
 		}
 		//printf("attack distance: %f ", distance);
-		if (distance <= 55 && !enemy.damaged) { //ataque acertou
+		if (distance <= 55 && !enemy.invincible) { //ataque acertou
 			sndPlaySound(".\\res\\audio\\hitEnemy.wav", SND_ASYNC);
 			enemy.life -= player.power;
 			enemy.damaged = true;
+			enemy.invincible = true;
 			enemy.timer = 0;
-			printf("hit! enemy: %d ", enemy.life);
 		}
 	}
 }
@@ -679,7 +757,7 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 	enemyCheckLife();
 	if (!player.dead){
 			enemy.timer++;
-		if (!enemy.damaged) {
+		if (!enemy.invincible) {
 			if (enemy.timer == 30) {
 				enemyAttack(positions);
 			} else if (enemy.timer == 90) {
@@ -693,7 +771,7 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 		} else {
 			if (enemy.timer == 40) {
 				enemyMove(positions);
-				enemy.damaged = false;
+				enemy.invincible = false;
 				enemy.timer = 0;
 			}
 		}
@@ -717,9 +795,16 @@ void renderEnemy() {
 		}
 	} else if(enemy.damaged) {
 		if(enemy.lookRight) {
-			
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[133 + enemy.damagedIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[133 + enemy.damagedIndex], OR_PUT);
 		} else {
-			
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[162 + enemy.damagedIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[162 + enemy.damagedIndex], OR_PUT);
+		}
+		enemy.damagedIndex++;
+		if (enemy.damagedIndex >= MAX_ENEMY_DAMAGED_INDEX) {
+			enemy.damagedIndex = 0;
+			enemy.damaged = false;
 		}
 	} else {
 		if(enemy.lookRight) {
@@ -767,42 +852,35 @@ void enemyAttack(Position *positions) {
 	
 	int enemyPos;
 	Pellet pellet1, pellet2;
-
 	
 	//verifica a posicao atual do inimigo
 	if (enemy.x == positions[0].x && enemy.y == positions[0].y) { //posicao 0
 
 		pellet1 = createPellet(1, 0);
 		pellet2 = createPellet(2, 0);
-		addPellet(pellet1);
-		addPellet(pellet2);
+		
 		
 	} else if (enemy.x == positions[1].x && enemy.y == positions[1].y) { //posicao 1
 
 		pellet1 = createPellet(1, 1);
 		pellet2 = createPellet(2, 1);
-		addPellet(pellet1);
-		addPellet(pellet2);
 		
 	} else if (enemy.x == positions[2].x && enemy.y == positions[2].y) { //posicao 2
 		
 		pellet1 = createPellet(1, 2);
 		pellet2 = createPellet(2, 2);
-		addPellet(pellet1);
-		addPellet(pellet2);
 		
 	} else if (enemy.x == positions[3].x && enemy.y == positions[3].y) { //posicao 3
 
 		pellet1 = createPellet(1, 3);
 		pellet2 = createPellet(2, 3);
-		addPellet(pellet1);
-		addPellet(pellet2);
 		
 	} else {
 		return;
 	}
 	
-	
+	addPellet(pellet1);
+	addPellet(pellet2);
 }
 
 void enemyCheckLife() {
@@ -833,7 +911,6 @@ void updatePellets() {
 					if (player.life > 0) sndPlaySound(".\\res\\audio\\hitPlayer.wav", SND_ASYNC); else sndPlaySound(".\\res\\audio\\deathPlayer.wav", SND_ASYNC);
 					player.damaged = true;
 					player.invincible = true;
-					printf("Damaged player: %d ", player.life);
 				}
 			}	
 			
