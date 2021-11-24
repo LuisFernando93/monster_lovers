@@ -20,7 +20,7 @@ using namespace std;
 #define MAX_ENEMY_TELEPORT_INDEX 11
 #define MAX_ENEMY_IDLE_INDEX 5
 #define MAX_ENEMY_ATTACK_INDEX 11
-#define MAX_ENEMY_DAMAGED_INDEX 8
+#define MAX_ENEMY_DAMAGED_INDEX 9
 #define MAX_ENEMY_DEATH_INDEX 14
 
 struct Floor {
@@ -87,6 +87,7 @@ Pellet createPellet(int number, int position);
 void addPellet(Pellet);
 void removePellet(int i);
 void clearPellets();
+void ui();
 void newGame(Floor *floors, int nFloor, Position *positions, int initPos);
 void changeGameState(int newState);
 
@@ -100,6 +101,7 @@ int gameStateGb = -1; //menu = 0; jogo = 1, creditos = 2, game over = 3
 
 void *imgScene, *imgCredits, *imgGameover, *imgMenu, *imgControls, *imgOptions;
 void *sprites[MAX_SPRITES], *spriteMasks[MAX_SPRITES];
+void *imgUI[8];
 
 int main()  { 
 
@@ -143,7 +145,7 @@ int main()  {
 	}
 	
 	readimagefile(".\\res\\image\\spritesheet.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
-	for(int j = 0; j < 22; j++) {
+	for(int j = 0; j < 20; j++) {
 		for(int i = 0; i < 10; i++) {
 			getimage(SPRITE_RES*i, SPRITE_RES*j, SPRITE_RES*i + SPRITE_RES-1, SPRITE_RES*j + SPRITE_RES-1, sprites[i + j*10]);
 		}
@@ -151,7 +153,7 @@ int main()  {
 	
 	
 	readimagefile(".\\res\\image\\mask.bmp", 0, 0, WImgSpritesheet - 1, HImgSpritesheet - 1);
-	for(int j = 0; j < 22; j++) {
+	for(int j = 0; j < 20; j++) {
 		for(int i = 0; i < 10; i++) {
 			getimage(SPRITE_RES*i, SPRITE_RES*j, SPRITE_RES*i + SPRITE_RES-1, SPRITE_RES*j + SPRITE_RES-1, spriteMasks[i + j*10]);
 		}
@@ -220,6 +222,30 @@ int main()  {
 	sizeImgOptions = imagesize(0, 0, WImgOptions - 1, HImgOptions - 1);
 	imgOptions = malloc(sizeImgOptions);
 	getimage(0, 0, WImgOptions - 1, HImgOptions - 1, imgOptions);
+	
+	int WImgUI, HImgUI, sizeImgUI, WProjetil, HProjetil, sizeImgProjetil;
+	
+	WImgUI = 46;
+	HImgUI = 64;
+	sizeImgUI = imagesize(0, 0, WImgUI - 1, HImgUI - 1);
+	
+	for(int i = 0; i < 4; i++) {
+		imgUI[i] = malloc(sizeImgUI);
+		imgUI[i+4] = malloc(sizeImgUI);
+	}
+	
+	readimagefile(".\\res\\image\\UIcor.bmp", 0, 0, 172 - 1, HImgUI - 1);
+	for (int i = 0; i < 2; i++) {
+		getimage(WImgUI*i, 0, WImgUI*i + WImgUI - 1, HImgUI - 1, imgUI[i]);
+		getimage(WImgUI*2 + 40*i, 0, WImgUI*2 + 40*(i+1) - 1, HImgUI - 1, imgUI[i+2]);
+	}
+	
+	readimagefile(".\\res\\image\\UImask.bmp", 0, 0, 172 - 1, HImgUI - 1);
+	for (int i = 4; i < 6; i++) {
+		getimage(WImgUI*(i-4), 0, WImgUI*(i-4) + WImgUI - 1, HImgUI - 1, imgUI[i]);
+		getimage(WImgUI*2 + 40*(i-4), 0, WImgUI*2 + 40*(i-3) - 1, HImgUI - 1, imgUI[i+2]);
+	}
+	
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -372,7 +398,10 @@ int main()  {
 		free(sprites[i]);
 		free(spriteMasks[i]);
 	}
-	
+	for (int i = 0; i < 4; i++) {
+		free(imgUI[i]);
+		free(imgUI[i+4]);
+	} 
 	
 	mciSendString("close menu", NULL, 0, 0);
 	mciSendString("close game", NULL, 0, 0);
@@ -397,6 +426,8 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 	if (gameStateGb == 1) {
 		
 		putimage(0, 0, imgScene, COPY_PUT);
+		
+		ui();
 			
 	//	setfillstyle(1, COLOR(255, 255, 0));
 	//	for (int i = 0; i < nWall; i++) bar(walls[i].x, walls[i].y, walls[i].x + walls[i].width, walls[i].y + walls[i].height);
@@ -591,8 +622,8 @@ void playerAttack() {
 		} else {
 			distance = sqrt(pow(player.x - enemy.x - enemy.width, 2) + pow(player.y - enemy.y, 2));
 		}
-		//dprintf("attack distance: %f ", distance);
-		if (distance <= 100 && !enemy.damaged) { //ataque acertou
+		//printf("attack distance: %f ", distance);
+		if (distance <= 55 && !enemy.damaged) { //ataque acertou
 			sndPlaySound(".\\res\\audio\\hitEnemy.wav", SND_ASYNC);
 			enemy.life -= player.power;
 			enemy.damaged = true;
@@ -690,20 +721,18 @@ void renderEnemy() {
 		} else {
 			
 		}
-	} else if(enemy.attack) {
-		if(enemy.lookRight) {
-			
-		} else {
-			
-		}
-	} else if(enemy.teleport) {
-		if(enemy.lookRight) {
-			
-		} else {
-			
-		}
 	} else {
-		
+		if(enemy.lookRight) {
+			//putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[135 + enemy.idleIndex], AND_PUT);
+			//putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[135 + enemy.idleIndex], OR_PUT);
+		} else {
+			//putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[184 + enemy.idleIndex], AND_PUT);
+			//putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[184 + enemy.idleIndex], OR_PUT);
+		}
+		enemy.idleIndex++;
+		if (enemy.deathIndex >= MAX_ENEMY_DEATH_INDEX) {
+			enemy.idleIndex;
+		}
 	}
 }
 
@@ -909,6 +938,28 @@ void clearPellets() {
 	pelletsGb = (Pellet *)malloc(sizeof(Pellet) * nPelletsGb);
 }
 
+void ui() {
+	
+	for (int i = 0; i < 8; i++) {
+		putimage(40 + i*56, 30, imgUI[5], AND_PUT);
+		putimage(40 + i*56, 30, imgUI[1], OR_PUT);
+	
+		putimage(WIDTH*SCALE - 40 - 40 - i*56, 30, imgUI[7], AND_PUT);
+		putimage(WIDTH*SCALE - 40 - 40 - i*56, 30, imgUI[3], OR_PUT);
+	}
+	
+	for (int i = 0; i<player.life; i++) {
+		putimage(40 + i*56, 30, imgUI[4], AND_PUT);
+		putimage(40 + i*56, 30, imgUI[0], OR_PUT);
+	}
+	
+	for (int i = 0; i<enemy.life; i++) {
+		putimage(WIDTH*SCALE - 40 - 40 - i*56, 30, imgUI[6], AND_PUT);
+		putimage(WIDTH*SCALE - 40 - 40 - i*56, 30, imgUI[2], OR_PUT);
+	}
+	
+}
+
 void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	
 	player.x = (WIDTH/2 - 180 )*SCALE;
@@ -937,7 +988,7 @@ void newGame(Floor *floors, int Floor, Position *positions, int initPos) {
 	
 	enemy.x = positions[initPos].x;
 	enemy.y = positions[initPos].y;
-	enemy.life = 1;
+	enemy.life = 8;
 	enemy.power = 1;
 	enemy.timer = 0;
 	enemy.attack = false;
