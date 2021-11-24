@@ -723,15 +723,15 @@ void renderEnemy() {
 		}
 	} else {
 		if(enemy.lookRight) {
-			//putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[135 + enemy.idleIndex], AND_PUT);
-			//putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[135 + enemy.idleIndex], OR_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[140 + enemy.idleIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[140 + enemy.idleIndex], OR_PUT);
 		} else {
-			//putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[184 + enemy.idleIndex], AND_PUT);
-			//putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[184 + enemy.idleIndex], OR_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[179 + enemy.idleIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[179 + enemy.idleIndex], OR_PUT);
 		}
 		enemy.idleIndex++;
-		if (enemy.deathIndex >= MAX_ENEMY_DEATH_INDEX) {
-			enemy.idleIndex;
+		if (enemy.idleIndex >= MAX_ENEMY_IDLE_INDEX) {
+			enemy.idleIndex = 0;
 		}
 	}
 }
