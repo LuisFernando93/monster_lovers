@@ -106,7 +106,7 @@ HWND screen;
 
 int gameStateGb = 0; //menu = 0; jogo = 1, creditos = 2, game over = 3, opcoes = -1
 
-void *imgScene, *imgCredits, *imgGameover, *imgMenu, *imgControls, *imgOptions;
+void *imgScene, *imgCredits, *imgGameover, *imgMenu, *imgControls, *imgOptions, *imgLoading;
 void *sprites[MAX_SPRITES], *spriteMasks[MAX_SPRITES];
 void *imgUI[8], *imgProjetil[2];
 
@@ -140,6 +140,25 @@ int main()  {
   	gt2 = gt1 + 1200;
   	
 	initwindow(1280, 3072);
+	//initwindow(WIDTH*SCALE, HEIGHT*SCALE);
+	
+	int WImgLoading, HImgLoading, sizeImgLoading;
+	
+	WImgLoading = 800;
+	HImgLoading = 496;
+	
+	readimagefile(".\\res\\image\\loading.bmp", 0, 0, WImgLoading - 1, HImgLoading - 1);
+	sizeImgLoading = imagesize(0, 0, WImgLoading - 1, HImgLoading - 1);
+	imgLoading = malloc(sizeImgLoading);
+	getimage(0, 0, WImgLoading - 1, HImgLoading - 1, imgLoading);
+	
+	setactivepage(1);
+	setfillstyle(1, COLOR(0, 0, 0));
+	bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
+	putimage(240, 0, imgLoading, COPY_PUT);
+	setvisualpage(1);
+	
+	setactivepage(2);
   	
 	int WImgSpritesheet, HImgSpritesheet, sizeSprite;
 	
@@ -254,6 +273,8 @@ int main()  {
 		getimage(172 + WImgUI*(i-4), 0, 172 + WImgUI*(i-4) + WImgUI - 1, HImgUI - 1, imgUI[i]);
 		getimage(172 + WImgUI*2 + 40*(i-4), 0, 172 + WImgUI*2 + 40*(i-3) - 1, HImgUI - 1, imgUI[i+2]);
 	}
+	
+	setactivepage(1);
 	
 	WProjetil = 8;
 	HProjetil = 8;
@@ -435,6 +456,7 @@ int main()  {
 	free(pelletsGb);
 	free(imgScene);
 	free(imgCredits);
+	free(imgLoading);
 	free(imgProjetil[0]);
 	free(imgProjetil[1]);
 	for (int i = 0; i < MAX_SPRITES; i++){
