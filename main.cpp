@@ -485,7 +485,7 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 			} else if (pointGb.x >= 766 && pointGb.x <= 885 && pointGb.y >= 900 && pointGb.y <= 275) {
 				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
 				waveOutSetVolume(0,0x00000000);
-			} else if (pointGb.x >= 580 && pointGb.x <= 702 && pointGb.y >= 365 && pointGb.y <= 410) {
+			} else if (pointGb.x >= 580 && pointGb.x <= 702 && pointGb.y >= 430 && pointGb.y <= 480) {
 				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
 				gameStateGb = 0;
 			}
