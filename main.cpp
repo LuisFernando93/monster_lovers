@@ -81,6 +81,7 @@ void updateEnemy(Position *positions);
 void renderEnemy();
 void enemyMove(Position *positions);
 void enemyAttack(Position *positions);
+void cancelEnemyAttack();
 void enemyCheckLife();
 void updatePellets();
 Pellet createPellet(int number, int position);
@@ -317,8 +318,6 @@ int main()  {
 	
 	changeGameState(0);
 	
-	mciSendString("play menu repeat", NULL, 0, 0);
-	
 	while(Tecla != ESC) {
    			
 		if (gt2 - gt1 > (1000/fps)) {
@@ -361,7 +360,7 @@ int main()  {
 					if (ScreenToClient(screen, &pointGb)){
 						int x = pointGb.x;
 						int y = pointGb.y;
-						//printf("x = %d y = %d ", x, y);
+						printf("x = %d y = %d ", x, y);
 						clickGb = true;
 					}
 				}
@@ -481,6 +480,7 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
 				gameStateGb = 0;
 			}
+			clickGb = false;
 		}
 	}
 }
@@ -703,6 +703,7 @@ void playerAttack() {
 		//printf("attack distance: %f ", distance);
 		if (distance <= 55 && !enemy.invincible) { //ataque acertou
 			sndPlaySound(".\\res\\audio\\hitEnemy.wav", SND_ASYNC);
+			cancelEnemyAttack();
 			enemy.life -= player.power;
 			enemy.damaged = true;
 			enemy.invincible = true;
@@ -759,11 +760,11 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 			enemy.timer++;
 		if (!enemy.invincible) {
 			if (enemy.timer == 30) {
-				enemyAttack(positions);
+				enemy.attack = true;
 			} else if (enemy.timer == 90) {
-				enemyAttack(positions);
+				enemy.attack = true;
 			} else if (enemy.timer == 150) {
-				enemyAttack(positions);
+				enemy.attack = true;
 			} else if (enemy.timer == 240) {
 				enemyMove(positions);
 				enemy.timer = 0;
@@ -774,6 +775,9 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 				enemy.invincible = false;
 				enemy.timer = 0;
 			}
+		}
+		if(enemy.attackIndex == 10) {
+			enemyAttack(positions);
 		}
 	}
 	
@@ -805,6 +809,20 @@ void renderEnemy() {
 		if (enemy.damagedIndex >= MAX_ENEMY_DAMAGED_INDEX) {
 			enemy.damagedIndex = 0;
 			enemy.damaged = false;
+		}
+
+	} else if (enemy.attack) {
+		if(enemy.lookRight) {
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[111 + enemy.attackIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[111 + enemy.attackIndex], OR_PUT);
+		} else {
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[155 + enemy.attackIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[155 + enemy.attackIndex], OR_PUT);
+		}
+		enemy.attackIndex++;
+		if (enemy.attackIndex >= MAX_ENEMY_ATTACK_INDEX) {
+			enemy.attackIndex = 0;
+			enemy.attack = false;
 		}
 	} else {
 		if(enemy.lookRight) {
@@ -881,6 +899,11 @@ void enemyAttack(Position *positions) {
 	
 	addPellet(pellet1);
 	addPellet(pellet2);
+}
+
+void cancelEnemyAttack() {
+	enemy.attack = false;
+	enemy.attackIndex = 0;
 }
 
 void enemyCheckLife() {
@@ -1092,7 +1115,7 @@ void changeGameState(int newState) {
 		mciSendString("stop credits", NULL, 0, 0);
 	} else if(gameStateGb == 3) {
 		mciSendString("stop gameover", NULL, 0, 0);
-	} else if(gameStateGb == 0) {
+	} else if(gameStateGb == 0 || gameStateGb == 4 || gameStateGb == -1) {
 		mciSendString("stop menu", NULL, 0, 0);
 	}
 	
