@@ -84,6 +84,7 @@ void enemyAttack(Position *positions);
 void cancelEnemyAttack();
 void enemyCheckLife();
 void updatePellets();
+void renderPellets();
 Pellet createPellet(int number, int position);
 void addPellet(Pellet);
 void removePellet(int i);
@@ -107,7 +108,7 @@ int gameStateGb = 0; //menu = 0; jogo = 1, creditos = 2, game over = 3, opcoes =
 
 void *imgScene, *imgCredits, *imgGameover, *imgMenu, *imgControls, *imgOptions;
 void *sprites[MAX_SPRITES], *spriteMasks[MAX_SPRITES];
-void *imgUI[8];
+void *imgUI[8], *imgProjetil[2];
 
 int main()  { 
 
@@ -243,18 +244,24 @@ int main()  {
 		imgUI[i+4] = malloc(sizeImgUI);
 	}
 	
-	readimagefile(".\\res\\image\\UIcor.bmp", 0, 0, 172 - 1, HImgUI - 1);
+	readimagefile(".\\res\\image\\UI.bmp", 0, 0, 360 - 1, HImgUI - 1);
 	for (int i = 0; i < 2; i++) {
 		getimage(WImgUI*i, 0, WImgUI*i + WImgUI - 1, HImgUI - 1, imgUI[i]);
 		getimage(WImgUI*2 + 40*i, 0, WImgUI*2 + 40*(i+1) - 1, HImgUI - 1, imgUI[i+2]);
 	}
 	
-	readimagefile(".\\res\\image\\UImask.bmp", 0, 0, 172 - 1, HImgUI - 1);
 	for (int i = 4; i < 6; i++) {
-		getimage(WImgUI*(i-4), 0, WImgUI*(i-4) + WImgUI - 1, HImgUI - 1, imgUI[i]);
-		getimage(WImgUI*2 + 40*(i-4), 0, WImgUI*2 + 40*(i-3) - 1, HImgUI - 1, imgUI[i+2]);
+		getimage(172 + WImgUI*(i-4), 0, 172 + WImgUI*(i-4) + WImgUI - 1, HImgUI - 1, imgUI[i]);
+		getimage(172 + WImgUI*2 + 40*(i-4), 0, 172 + WImgUI*2 + 40*(i-3) - 1, HImgUI - 1, imgUI[i+2]);
 	}
 	
+	WProjetil = 8;
+	HProjetil = 8;
+	sizeImgProjetil = imagesize(0, 0, WProjetil - 1, HProjetil - 1);
+	for (int i = 0; i < 2; i++) imgProjetil[i] = malloc(sizeImgProjetil);
+	
+	getimage(344, 0, 344 + WProjetil - 1, HProjetil - 1, imgProjetil[0]);
+	getimage(352, 0, 352 + WProjetil - 1, HProjetil - 1, imgProjetil[1]);
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -428,6 +435,8 @@ int main()  {
 	free(pelletsGb);
 	free(imgScene);
 	free(imgCredits);
+	free(imgProjetil[0]);
+	free(imgProjetil[1]);
 	for (int i = 0; i < MAX_SPRITES; i++){
 		free(sprites[i]);
 		free(spriteMasks[i]);
@@ -511,13 +520,9 @@ void render(Wall *walls, int nWall, Floor *floors, int nFloor) {
 		
 		renderEnemy();
 		renderPlayer();
+		renderPellets();
 		
-		setfillstyle(1, COLOR(255, 255, 0));
-		if (nPelletsGb > 0) {
-			for (int i = 0; i < nPelletsGb; i++) {
-				bar(pelletsGb[i].x, pelletsGb[i].y, pelletsGb[i].x + pelletsGb[i].width, pelletsGb[i].y + pelletsGb[i].height);
-			}
-		}
+		
 	} else if (gameStateGb == 2) { //creditos
 		setfillstyle(1, COLOR(0, 0, 0));
 		bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
@@ -701,7 +706,7 @@ void playerAttack() {
 			distance = sqrt(pow(player.x - enemy.x - enemy.width, 2) + pow(player.y - enemy.y, 2));
 		}
 		//printf("attack distance: %f ", distance);
-		if (distance <= 55 && !enemy.invincible) { //ataque acertou
+		if (distance <= 55 && !enemy.invincible && !enemy.teleport) { //ataque acertou
 			sndPlaySound(".\\res\\audio\\hitEnemy.wav", SND_ASYNC);
 			cancelEnemyAttack();
 			enemy.life -= player.power;
@@ -765,7 +770,7 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 				enemy.attack = true;
 			} else if (enemy.timer == 150) {
 				enemy.attack = true;
-			} else if (enemy.timer == 240) {
+			} else if (enemy.timer == 220) {
 				enemy.teleport = true;
 			}
 		} else {
@@ -919,6 +924,8 @@ void enemyAttack(Position *positions) {
 		return;
 	}
 	
+	sndPlaySound(".\\res\\audio\\enemyAttack.wav", SND_ASYNC);
+	
 	addPellet(pellet1);
 	addPellet(pellet2);
 }
@@ -941,7 +948,7 @@ void updatePellets() {
 			pelletsGb[i].x += pelletsGb[i].vx;
 			pelletsGb[i].y += pelletsGb[i].vy;
 			
-			if (pelletsGb[i].x <= (0*SCALE) || pelletsGb[i].x >= (WIDTH*SCALE) || pelletsGb[i].y <= (0*SCALE) || pelletsGb[i].y >= (HEIGHT*SCALE)) {
+			if (pelletsGb[i].x <= (0*SCALE) || pelletsGb[i].x >= (WIDTH*SCALE) || pelletsGb[i].y <= (0*SCALE) || pelletsGb[i].y >= (HEIGHT*SCALE - 20)) {
 				removePellet(i);
 				if(nPelletsGb == 0) {
 					return;
@@ -960,6 +967,18 @@ void updatePellets() {
 			}	
 			
 					
+		}
+	}
+}
+
+void renderPellets() {
+	
+	//setfillstyle(1, COLOR(255, 255, 0));
+	if (nPelletsGb > 0) {
+		for (int i = 0; i < nPelletsGb; i++) {
+			putimage(pelletsGb[i].x, pelletsGb[i].y, imgProjetil[1], AND_PUT);
+			putimage(pelletsGb[i].x, pelletsGb[i].y, imgProjetil[0], OR_PUT);
+			//bar(pelletsGb[i].x, pelletsGb[i].y, pelletsGb[i].x + pelletsGb[i].width, pelletsGb[i].y + pelletsGb[i].height);
 		}
 	}
 }
