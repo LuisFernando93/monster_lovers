@@ -190,6 +190,14 @@ int main()  {
 	
 	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
 	
+	setactivepage(1);
+	setfillstyle(1, COLOR(0, 0, 0));
+	bar(0, 0, WIDTH*SCALE, HEIGHT*SCALE);
+	putimage(240, 0, imgLoading, COPY_PUT);
+	setvisualpage(1);
+	
+	setactivepage(2);
+	
 	screen = GetForegroundWindow();
   	
   	int WImgScene, HImgScene, sizeImgScene;
@@ -274,8 +282,6 @@ int main()  {
 		getimage(172 + WImgUI*2 + 40*(i-4), 0, 172 + WImgUI*2 + 40*(i-3) - 1, HImgUI - 1, imgUI[i+2]);
 	}
 	
-	setactivepage(1);
-	
 	WProjetil = 8;
 	HProjetil = 8;
 	sizeImgProjetil = imagesize(0, 0, WProjetil - 1, HProjetil - 1);
@@ -283,6 +289,8 @@ int main()  {
 	
 	getimage(344, 0, 344 + WProjetil - 1, HProjetil - 1, imgProjetil[0]);
 	getimage(352, 0, 352 + WProjetil - 1, HProjetil - 1, imgProjetil[1]);
+	
+	setactivepage(1);
 	
 	walls = (Wall *)malloc(sizeof(Wall) * nWall);
 	floors = (Floor *)malloc(sizeof(Floor) * nFloor);
@@ -504,7 +512,7 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 			if (pointGb.x >= 348 && pointGb.x <= 527 && pointGb.y >= 180 && pointGb.y <= 275) {
 				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
 				waveOutSetVolume(0,0x44444444);
-			} else if (pointGb.x >= 766 && pointGb.x <= 885 && pointGb.y >= 900 && pointGb.y <= 275) {
+			} else if (pointGb.x >= 766 && pointGb.x <= 910 && pointGb.y >= 180 && pointGb.y <= 275) {
 				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
 				waveOutSetVolume(0,0x00000000);
 			} else if (pointGb.x >= 580 && pointGb.x <= 702 && pointGb.y >= 430 && pointGb.y <= 480) {
@@ -798,7 +806,6 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 		} else {
 			if (enemy.timer == 40) {
 				enemy.teleport = true;
-				enemy.invincible = false;
 			}
 		}
 		if(enemy.attackIndex == 10) {
@@ -808,6 +815,7 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 			enemyMove(positions);
 			enemy.timer = 0;
 			enemy.move = false;
+			enemy.invincible = false;
 		}
 	}
 	
