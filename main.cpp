@@ -17,7 +17,7 @@ using namespace std;
 #define MAX_PLAYER_ATTACK_INDEX 13
 #define MAX_PLAYER_DAMAGED_INDEX 5
 #define MAX_PLAYER_DEATH_INDEX 14
-#define MAX_ENEMY_TELEPORT_INDEX 11
+#define MAX_ENEMY_TELEPORT_INDEX 10
 #define MAX_ENEMY_IDLE_INDEX 5
 #define MAX_ENEMY_ATTACK_INDEX 11
 #define MAX_ENEMY_DAMAGED_INDEX 9
@@ -360,7 +360,7 @@ int main()  {
 					if (ScreenToClient(screen, &pointGb)){
 						int x = pointGb.x;
 						int y = pointGb.y;
-						printf("x = %d y = %d ", x, y);
+						//printf("x = %d y = %d ", x, y);
 						clickGb = true;
 					}
 				}
@@ -470,10 +470,10 @@ void update(Wall *walls, int nWall, Floor *floors, int nFloor, Position *positio
 		updatePellets();
 	} else if (gameStateGb == -1) {
 		if (clickGb) {
-			if (pointGb.x >= 355 && pointGb.x <= 460 && pointGb.y >= 180 && pointGb.y <= 275) {
+			if (pointGb.x >= 348 && pointGb.x <= 527 && pointGb.y >= 180 && pointGb.y <= 275) {
 				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
 				waveOutSetVolume(0,0x44444444);
-			} else if (pointGb.x >= 775 && pointGb.x <= 885 && pointGb.y >= 180 && pointGb.y <= 275) {
+			} else if (pointGb.x >= 766 && pointGb.x <= 885 && pointGb.y >= 900 && pointGb.y <= 275) {
 				sndPlaySound(".\\res\\audio\\Menu.wav", SND_ASYNC);
 				waveOutSetVolume(0,0x00000000);
 			} else if (pointGb.x >= 580 && pointGb.x <= 702 && pointGb.y >= 365 && pointGb.y <= 410) {
@@ -766,18 +766,21 @@ void updateEnemy(Position *positions) { //o inimigo utiliza o timer para fazer s
 			} else if (enemy.timer == 150) {
 				enemy.attack = true;
 			} else if (enemy.timer == 240) {
-				enemyMove(positions);
-				enemy.timer = 0;
+				enemy.teleport = true;
 			}
 		} else {
 			if (enemy.timer == 40) {
-				enemyMove(positions);
+				enemy.teleport = true;
 				enemy.invincible = false;
-				enemy.timer = 0;
 			}
 		}
 		if(enemy.attackIndex == 10) {
 			enemyAttack(positions);
+		}
+		if(enemy.move) {
+			enemyMove(positions);
+			enemy.timer = 0;
+			enemy.move = false;
 		}
 	}
 	
@@ -823,6 +826,25 @@ void renderEnemy() {
 		if (enemy.attackIndex >= MAX_ENEMY_ATTACK_INDEX) {
 			enemy.attackIndex = 0;
 			enemy.attack = false;
+		}
+	} else if(enemy.teleport) {
+		if(enemy.lookRight) {
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[123 + enemy.teleportIndex], AND_PUT);
+			putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[123 + enemy.teleportIndex], OR_PUT);
+		} else {
+			if (enemy.teleportIndex < 6) {
+				putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[166 + enemy.teleportIndex], AND_PUT);
+				putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[166 + enemy.teleportIndex], OR_PUT);
+			} else {
+				putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, spriteMasks[123 + enemy.teleportIndex], AND_PUT);
+				putimage(enemy.x - (SPRITE_RES-enemy.width)/2, enemy.y, sprites[123 + enemy.teleportIndex], OR_PUT);
+			}
+		}
+		enemy.teleportIndex++;
+		if (enemy.teleportIndex >= MAX_ENEMY_TELEPORT_INDEX) {
+			enemy.teleportIndex = 0;
+			enemy.teleport = false;
+			enemy.move = true;
 		}
 	} else {
 		if(enemy.lookRight) {
