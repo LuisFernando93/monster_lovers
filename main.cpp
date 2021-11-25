@@ -139,7 +139,7 @@ int main()  {
   	gt1 = GetTickCount();
   	gt2 = gt1 + 1200;
   	
-	initwindow(1280, 3072);
+	initwindow(1280, 3072, "Monster Lovers!");
 	//initwindow(WIDTH*SCALE, HEIGHT*SCALE);
 	
 	int WImgLoading, HImgLoading, sizeImgLoading;
@@ -188,7 +188,7 @@ int main()  {
 	
 	closegraph();
 	
-	initwindow(WIDTH*SCALE, HEIGHT*SCALE);
+	initwindow(WIDTH*SCALE, HEIGHT*SCALE, "Monster Lovers!");
 	
 	setactivepage(1);
 	setfillstyle(1, COLOR(0, 0, 0));
